@@ -65,7 +65,6 @@ struct IncidentTemplate<'a> {
     incident_id: i32,
     alert_name: &'a str,
     hostname: &'a str,
-    status: &'a str,
     severity: &'a str,
     started_at: &'a str,
     updated_at: &'a str,
@@ -73,6 +72,17 @@ struct IncidentTemplate<'a> {
     result: &'a str,
     warn: &'a str,
     crit: &'a str,
+}
+
+/// Structure representing the incident template html sent by mail
+#[derive(Template)]
+#[template(path = "resolved.html")]
+struct ResolvedTemplate<'a> {
+    incident_id: i32,
+    alert_name: &'a str,
+    hostname: &'a str,
+    started_at: &'a str,
+    updated_at: &'a str,
 }
 
 fn send_mail(incident: &Incidents, template: String) {
@@ -117,31 +127,37 @@ fn send_mail(incident: &Incidents, template: String) {
 /// Send an email alerting that a new incident was created.
 pub fn send_alert(incident: &Incidents) {
     // Convert the status, severity, started_at & updated_at to string
-    let incident_status = IncidentStatus::from(incident.status).to_string();
     let incident_severity = Severity::from(incident.severity).to_string();
     let started_at = incident.started_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at = incident.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    // Build the IncidentTemplate (html code)
-    // The IncidentTemplate struct is used to hold all the information
-    // about the template, which values are needed, ...
-    let incident_template = IncidentTemplate {
-        incident_id: incident.id,
-        alert_name: &incident.alerts_name,
-        hostname: &incident.hostname,
-        status: &incident_status,
-        severity: &incident_severity,
-        started_at: &started_at,
-        updated_at: &updated_at,
-        lookup: &incident.alerts_lookup,
-        result: &incident.result,
-        warn: &incident.alerts_warn,
-        crit: &incident.alerts_crit,
-    }
-    .render()
-    .unwrap();
+    let template = match IncidentStatus::from(incident.status) {
+        IncidentStatus::Active => IncidentTemplate {
+            incident_id: incident.id,
+            alert_name: &incident.alerts_name,
+            hostname: &incident.hostname,
+            severity: &incident_severity,
+            started_at: &started_at,
+            updated_at: &updated_at,
+            lookup: &incident.alerts_lookup,
+            result: &incident.result,
+            warn: &incident.alerts_warn,
+            crit: &incident.alerts_crit,
+        }
+        .render()
+        .unwrap(),
+        IncidentStatus::Resolved => ResolvedTemplate {
+            incident_id: incident.id,
+            alert_name: &incident.alerts_name,
+            hostname: &incident.hostname,
+            started_at: &started_at,
+            updated_at: &updated_at,
+        }
+        .render()
+        .unwrap(),
+    };
 
-    send_mail(incident, incident_template);
+    send_mail(incident, template);
 }
 
 /// Structure representing the escalation template html sent by mail
@@ -166,9 +182,6 @@ pub fn send_escalate(incident: &Incidents) {
     let started_at = incident.started_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at = incident.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    // Build the EscalateTemplate (html code)
-    // The EscalateTemplate struct is used to hold all the information
-    // about the template, which values are needed, ...
     let escalate_template = EscalateTemplate {
         incident_id: incident.id,
         alert_name: &incident.alerts_name,

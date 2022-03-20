@@ -103,24 +103,15 @@ a {text-decoration: none;}
                                                             <tr>
                                                                 <td align="left" style="padding:0;Margin:0">
                                                                     <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:24px;color:#333333;font-size:16px">
-                                                                        Host
-                                                                        <span style="padding: 3px;padding-left: 4px;padding-right: 4px;border-radius: 3px;color: #FFF;background-color: #3b82f6;">{{ hostname }}</span> is facing an incident.
+                                                                        The incident for
+                                                                        <span style="padding: 3px;padding-left: 4px;padding-right: 4px;border-radius: 3px;color: #FFF;background-color: #3b82f6;">{{ hostname }}</span> is resolved.
                                                                     </p>
                                                                 </td>
                                                             </tr>
                                                             <tr>
                                                                 <td align="left" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px">
                                                                     <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:24px;color:#333333;font-size:16px">
-                                                                        A new incident is reported because the lookup query returned a value which is above the threshold.
-                                                                    </p>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td align="left" style="padding:0;Margin:0;padding-bottom:15px">
-                                                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:24px;color:#333333;font-size:16px">
-                                                                        The incident is currently considered {% if severity == "Warning" -%}
-                                                                        <span style="padding: 3px;padding-left: 4px;padding-right: 4px;border-radius: 3px;color: #FFF;background-color: #FF6600;">{{ severity }}</span>{% else -%}
-                                                                        <span style="padding: 3px;padding-left: 4px;padding-right: 4px;border-radius: 3px;color: #FFF;background-color: #ff1e00;">{{ severity }}</span>{%- endif %}.
+                                                                        The result of the query for the alert does not trigger any warning anymore.
                                                                     </p>
                                                                 </td>
                                                             </tr>
@@ -146,22 +137,8 @@ a {text-decoration: none;}
                                                             <tr>
                                                                 <td align="left" style="padding:0;Margin:0">
                                                                     <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333;font-size:14px">
-                                                                        Incident updated at: {{ updated_at }}
+                                                                        Incident resolved at: {{ updated_at }}
                                                                     </p>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td align="left" style="padding:0;Margin:0;padding-top:15px">
-                                                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:24px;color:#333333;font-size:16px">
-                                                                        <strong>Query details:</strong>
-                                                                    </p>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td style="padding:0;Margin:0">
-                                                                    <div style="padding:1rem;background:#303030;color:#fff;border-radius:10px">
-                                                                        <code> Lookup: {{ lookup }}<br> Result: {{ result }}<br><br> Warning: {{ warn }}<br> Critical: {{ crit }} </code>
-                                                                    </div>
                                                                 </td>
                                                             </tr>
                                                             <tr>
