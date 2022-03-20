@@ -151,7 +151,6 @@ struct EscalateTemplate<'a> {
     incident_id: i32,
     alert_name: &'a str,
     hostname: &'a str,
-    status: &'a str,
     severity: &'a str,
     started_at: &'a str,
     updated_at: &'a str,
@@ -162,8 +161,7 @@ struct EscalateTemplate<'a> {
 }
 
 pub fn send_escalate(incident: &Incidents) {
-    // Convert the status, severity, started_at & updated_at to string
-    let incident_status = IncidentStatus::from(incident.status).to_string();
+    // Convert the severity, started_at & updated_at to string
     let incident_severity = Severity::from(incident.severity).to_string();
     let started_at = incident.started_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at = incident.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -175,7 +173,6 @@ pub fn send_escalate(incident: &Incidents) {
         incident_id: incident.id,
         alert_name: &incident.alerts_name,
         hostname: &incident.hostname,
-        status: &incident_status,
         severity: &incident_severity,
         started_at: &started_at,
         updated_at: &updated_at,
