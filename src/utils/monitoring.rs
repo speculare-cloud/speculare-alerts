@@ -22,11 +22,10 @@ pub fn alerts_from_config(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
                 let thosts: Vec<&Host> = hosts.iter().filter(|h| &h.uuid == val).collect();
                 if thosts.len() != 1 {
                     return Err(AppError {
-                        message: Some(format!(
+                        message: format!(
                             "The host {} in the AlertConfig {} does not exists.",
                             &val, &aconfig.name
-                        )),
-                        cause: None,
+                        ),
                         error_type: sproot::errors::AppErrorType::NotFound,
                     });
                 }

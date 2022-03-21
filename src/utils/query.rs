@@ -30,8 +30,7 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     // Assert that we have enough parameters
     if lookup_parts.len() < 5 {
         return Err(AppError {
-            message: Some("query: the lookup query is invalid, define as follow: [aggr] [mode] [timeframe] of [table] {over} {table}".into()),
-            cause: None,
+            message: "query: the lookup query is invalid, define as follow: [aggr] [mode] [timeframe] of [table] {over} {table}".to_owned(),
             error_type: AppErrorType::ServerError
         });
     }
@@ -42,11 +41,10 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
         "abs" => QueryType::Abs,
         _ => {
             return Err(AppError {
-                message: Some(format!(
+                message: format!(
                     "query: mode {} is invalid. Valid are: pct, abs.",
                     lookup_parts[1]
-                )),
-                cause: None,
+                ),
                 error_type: AppErrorType::ServerError,
             });
         }
@@ -55,10 +53,8 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     // If we're in mode Pct, we need more than 5 parts
     if req_mode == QueryType::Pct && lookup_parts.len() != 7 {
         return Err(AppError {
-            message: Some(
-                "query: lookup defined as mode pct but missing values, check usage.".into(),
-            ),
-            cause: None,
+            message: "query: lookup defined as mode pct but missing values, check usage."
+                .to_owned(),
             error_type: AppErrorType::ServerError,
         });
     }
@@ -68,8 +64,7 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     // Assert that req_type is correct (avg, sum, min, max, count)
     if !["avg", "sum", "min", "max", "count"].contains(&req_aggr) {
         return Err(AppError {
-            message: Some("query: aggr is invalid. Valid are: avg, sum, min, max, count.".into()),
-            cause: None,
+            message: "query: aggr is invalid. Valid are: avg, sum, min, max, count.".to_owned(),
             error_type: AppErrorType::ServerError,
         });
     }
@@ -79,10 +74,7 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     // Assert that req_time is correctly formatted (Regex?)
     if !INTERVAL_RGX.is_match(req_time) {
         return Err(AppError {
-            message: Some(
-                "query: req_time is not correctly formatted (doesn't pass regex).".into(),
-            ),
-            cause: None,
+            message: "query: req_time is not correctly formatted (doesn't pass regex).".to_owned(),
             error_type: AppErrorType::ServerError,
         });
     }
@@ -139,11 +131,10 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     for statement in DISALLOWED_STATEMENT {
         if tmp_query.contains(statement) {
             return Err(AppError {
-                message: Some(format!(
+                message: format!(
                     "Alert {} for host_uuid {:.6} contains disallowed statement \"{}\"",
                     alert.name, alert.host_uuid, statement
-                )),
-                cause: None,
+                ),
                 error_type: AppErrorType::ServerError,
             });
         }
@@ -176,8 +167,7 @@ pub fn execute_query(
             trace!("result abs is {:?}", &results);
             if results.is_empty() {
                 Err(AppError {
-                    message: Some("The result of the query (abs) is empty".into()),
-                    cause: None,
+                    message: "The result of the query (abs) is empty".to_owned(),
                     error_type: AppErrorType::NotFound,
                 })
             } else {
