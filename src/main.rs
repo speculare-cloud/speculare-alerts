@@ -5,7 +5,6 @@ use crate::utils::config::Config;
 
 use ahash::AHashMap;
 use clap::{Parser, Subcommand};
-use clap_verbosity_flag::WarnLevel;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 use sproot::models::AlertsConfig;
 use sproot::prog;
@@ -25,7 +24,7 @@ struct Args {
     config_path: Option<String>,
 
     #[clap(flatten)]
-    verbose: clap_verbosity_flag::Verbosity<WarnLevel>,
+    verbose: clap_verbosity_flag::Verbosity,
 }
 
 #[derive(Subcommand, Debug)]
@@ -60,6 +59,7 @@ async fn main() -> std::io::Result<()> {
             &prog().map_or_else(|| "speculare_alerts".to_owned(), |f| f.replace('-', "_")),
             args.verbose.log_level_filter(),
         )
+        .filter_module("sproot", args.verbose.log_level_filter())
         .init();
 
     // Init the connection to the postgresql
