@@ -4,14 +4,7 @@ use clap::Parser;
 use config::ConfigError;
 use lettre::message::Mailbox;
 use serde::{de, Deserialize, Deserializer};
-
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-pub enum AlertSource {
-    #[serde(rename = "files")]
-    Files,
-    #[serde(rename = "database")]
-    Database,
-}
+use sproot::models::{default_alertssource, AlertSource};
 
 #[derive(Debug, Deserialize, Clone)]
 
@@ -71,10 +64,6 @@ fn default_smtp_tls() -> bool {
 
 fn default_maxconn() -> u32 {
     10
-}
-
-fn default_alertssource() -> AlertSource {
-    AlertSource::Files
 }
 
 fn mailbox_deser<'de, D>(data: D) -> Result<Mailbox, D::Error>

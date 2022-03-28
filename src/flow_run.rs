@@ -1,12 +1,15 @@
 use crate::{
     utils::{
-        config::AlertSource, mail::test_smtp_transport, monitoring::launch_monitoring,
-        ws_alerts::listen_alerts_changes, ws_hosts::listen_hosts_changes,
+        mail::test_smtp_transport, monitoring::launch_monitoring, ws_alerts::listen_alerts_changes,
+        ws_hosts::listen_hosts_changes,
     },
     CONFIG,
 };
 
-use sproot::{models::Alerts, Pool};
+use sproot::{
+    models::{AlertSource, Alerts},
+    Pool,
+};
 
 /// Will start the program normally (launch alerts, ...)
 pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {

@@ -1,13 +1,13 @@
 use crate::{
     utils::{
-        analysis::execute_analysis, config::AlertSource, mail::test_smtp_transport,
-        monitoring::alerts_from_config, query::construct_query,
+        analysis::execute_analysis, mail::test_smtp_transport, monitoring::alerts_from_config,
+        query::construct_query,
     },
     ALERTS_CONFIG, CONFIG,
 };
 
 use sproot::{
-    models::{Alerts, AlertsConfig},
+    models::{AlertSource, Alerts, AlertsConfig},
     Pool,
 };
 

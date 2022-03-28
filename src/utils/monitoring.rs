@@ -1,9 +1,10 @@
 use crate::{ALERTS_CONFIG, CONFIG};
 
-use super::{alerts::start_alert_task, config::AlertSource};
+use super::alerts::start_alert_task;
 
 use sproot::{
     errors::AppError,
+    models::AlertSource,
     models::{Alerts, AlertsConfig, Host, HostTargeted},
     ConnType, Pool,
 };

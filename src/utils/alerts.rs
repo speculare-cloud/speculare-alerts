@@ -1,7 +1,8 @@
 use crate::{CONFIG, RUNNING_ALERT};
 
-use super::{analysis::execute_analysis, config::AlertSource, query::*};
+use super::{analysis::execute_analysis, query::*};
 
+use sproot::models::AlertSource;
 use sproot::{models::Alerts, ConnType, Pool};
 use std::{mem::MaybeUninit, time::Duration};
 
