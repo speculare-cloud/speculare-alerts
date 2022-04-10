@@ -1,3 +1,5 @@
+use std::{thread, time::Duration};
+
 use crate::{
     utils::{
         mail::test_smtp_transport, monitoring::launch_monitoring, ws_alerts::listen_alerts_changes,
@@ -43,11 +45,23 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
     launch_monitoring(pool.clone())
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.message()))?;
 
-    if CONFIG.alerts_source == AlertSource::Files {
-        // Start a WebSocket listening for inserted hosts to set up alerts.
-        listen_hosts_changes(pool).await
-    } else {
-        // Start a WebSocket listening for new/deleted/update alerts.
-        listen_alerts_changes(pool).await
+    // Doing it in a loop to attempt to reconnect to CDC
+    // if a crash of CDC/network happens.
+    loop {
+        if CONFIG.alerts_source == AlertSource::Files {
+            // Start a WebSocket listening for inserted hosts to set up alerts.
+            if let Err(e) = listen_hosts_changes(&pool).await {
+                error!("listen_hosts_changes: error: {}", e);
+            }
+        } else {
+            // Start a WebSocket listening for new/deleted/update alerts.
+            if let Err(e) = listen_alerts_changes(&pool).await {
+                error!("listen_alerts_changes: error: {}", e);
+            }
+        }
+
+        error!("Main loop: attempt to recover the CDC connection, waiting 5s");
+        // Avoid spamming CPU in case of crash loop
+        thread::sleep(Duration::from_secs(5));
     }
 }

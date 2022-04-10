@@ -10,9 +10,10 @@ use sproot::{
     models::{Alerts, AlertsConfig, HostTargeted},
     Pool,
 };
+use std::io::{Error, ErrorKind};
 
 /// Connect to websocket and execute new alerts
-pub async fn listen_hosts_changes(pool: Pool) -> std::io::Result<()> {
+pub async fn listen_hosts_changes(pool: &Pool) -> std::io::Result<()> {
     let domain = &CONFIG.wss_domain;
     // Construct the update_url using domain
     let mut update_url = String::with_capacity(35 + domain.len());
@@ -20,7 +21,9 @@ pub async fn listen_hosts_changes(pool: Pool) -> std::io::Result<()> {
     update_url.push_str(domain);
     update_url.push_str("/ws?query=insert:hosts");
     // Connect to the WS for the * (insert, update, delete) type
-    let mut ws_stream = connect_to_ws(&update_url).await;
+    let mut ws_stream = connect_to_ws(&update_url)
+        .await
+        .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
     // While we have some message, read them and wait for the next one
     while let Some(msg) = ws_stream.next().await {
