@@ -54,20 +54,20 @@ struct CdcChange {
 /// Struct to hold the return from the sql_query for percentage query
 #[derive(QueryableByName, Debug)]
 pub struct PctDTORaw {
-    #[sql_type = "Float8"]
+    #[diesel(sql_type = Float8)]
     pub numerator: f64,
-    #[sql_type = "Float8"]
+    #[diesel(sql_type = Float8)]
     pub divisor: f64,
-    #[sql_type = "Timestamp"]
+    #[diesel(sql_type = Timestamp)]
     pub time: chrono::NaiveDateTime,
 }
 
 /// Struct to hold the return from the sql_query for absolute query
 #[derive(QueryableByName, Debug)]
 pub struct AbsDTORaw {
-    #[sql_type = "Float8"]
+    #[diesel(sql_type = Float8)]
     pub value: f64,
-    #[sql_type = "Timestamp"]
+    #[diesel(sql_type = Timestamp)]
     pub time: chrono::NaiveDateTime,
 }
 

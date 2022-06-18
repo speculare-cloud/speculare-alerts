@@ -149,7 +149,7 @@ pub fn execute_query(
     query: &str,
     host_uuid: &str,
     qtype: &QueryType,
-    conn: &ConnType,
+    conn: &mut ConnType,
 ) -> Result<String, AppError> {
     // Based on the type we decide which way to go
     // Each type has their own return structure and conversion method (from struct to String).

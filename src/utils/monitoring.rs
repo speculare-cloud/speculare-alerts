@@ -9,7 +9,7 @@ use sproot::{
     ConnType, Pool,
 };
 
-pub fn alerts_from_config(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
+pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
     // TODO - If more than 50 hosts, get them too (paging).
     let hosts = &Host::list_hosts(conn, 50, 0)?;
 
@@ -67,7 +67,7 @@ pub fn alerts_from_config(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
     Ok(alerts)
 }
 
-fn alerts_from_files(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_files(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
     // Get the AlertsConfig from the ALERTS_PATH folder
     let alerts_config: Vec<AlertsConfig> =
         match AlertsConfig::from_configs_path(&CONFIG.alerts_path) {
@@ -85,14 +85,14 @@ fn alerts_from_files(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
     alerts_from_config(conn)
 }
 
-fn alerts_from_database(conn: &ConnType) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_database(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
     // Get the alerts from the database
     Alerts::get_list(conn)
 }
 
 /// Start the monitoring tasks for each alarms
 pub fn launch_monitoring(pool: Pool) -> Result<(), AppError> {
-    let conn = &pool.get()?;
+    let conn = &mut pool.get()?;
     let alerts = match if CONFIG.alerts_source == AlertSource::Files {
         alerts_from_files(conn)
     } else {

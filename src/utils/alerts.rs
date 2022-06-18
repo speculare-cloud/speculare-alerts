@@ -54,7 +54,7 @@ pub fn start_alert_task(alert: Alerts, pool: Pool) {
                 interval.period()
             );
 
-            let conn = match pool.get() {
+            let mut conn = match pool.get() {
                 Ok(conn) => conn,
                 Err(e) => {
                     error!("Cannot get a connection to the pool: {}", e);
@@ -62,7 +62,7 @@ pub fn start_alert_task(alert: Alerts, pool: Pool) {
                 }
             };
             // Execute the query and the analysis
-            execute_analysis(&query, &alert, &qtype, &conn);
+            execute_analysis(&query, &alert, &qtype, &mut conn);
         }
     });
     // Add the task into our AHashMap protected by RwLock (multiple readers, one write at most)
@@ -74,7 +74,7 @@ pub fn start_alert_task(alert: Alerts, pool: Pool) {
     // Add the Alert to the database if we're in Files mode
     if CONFIG.alerts_source == AlertSource::Files {
         let alert_id = calert.id.clone();
-        match Alerts::insert(&unsafe { conn.assume_init() }, &[calert]) {
+        match Alerts::insert(&mut unsafe { conn.assume_init() }, &[calert]) {
             Ok(_) => info!("Alert {} added to the database", alert_id),
             Err(e) => {
                 error!("Cannot add the alerts to the database: {}", e);

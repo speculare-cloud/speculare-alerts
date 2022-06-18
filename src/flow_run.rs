@@ -24,7 +24,7 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
     // diff between database and actual to remove the old alerts.
     if CONFIG.alerts_source == AlertSource::Files {
         // Get a connection from the R2D2 pool
-        let pooled_conn = match pool.get() {
+        let mut pooled_conn = match pool.get() {
             Ok(pooled) => pooled,
             Err(e) => {
                 error!("Cannot get a connection from the pool: {}", e);
@@ -32,7 +32,7 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
             }
         };
 
-        match Alerts::delete_all(&pooled_conn) {
+        match Alerts::delete_all(&mut pooled_conn) {
             Ok(_) => {}
             Err(e) => {
                 error!("Cannot delete the alerts from the database: {}", e);

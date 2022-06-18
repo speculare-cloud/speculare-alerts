@@ -11,7 +11,7 @@ use sproot::{
 /// This function is the core of the monitoring, this is where we:
 /// - Execute the query and get the result
 /// - Evaluate if we need to trigger an incidents or not
-pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &ConnType) {
+pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &mut ConnType) {
     info!(
         "Executing {} analysis for {:.6}",
         alert.name, alert.host_uuid
@@ -76,7 +76,8 @@ pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &C
                 resolved_at: Some(Utc::now().naive_local()),
                 ..Default::default()
             };
-            let incident = Incidents::gupdate(conn, &incident_dto, incident_id)
+            let incident = incident_dto
+                .gupdate(conn, incident_id)
                 .expect("Failed to update (resolve) the incidents");
             super::mail::send_alert(&incident);
         }
@@ -121,7 +122,8 @@ pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &C
                 severity: incident_severity,
                 ..Default::default()
             };
-            let incident = Incidents::gupdate(conn, &incident_dto, incident_id)
+            let incident = incident_dto
+                .gupdate(conn, incident_id)
                 .expect("Failed to update the incidents");
             if should_alert {
                 super::mail::send_escalate(&incident);
@@ -149,8 +151,9 @@ pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &C
                 alerts_info: calert.info,
                 alerts_where_clause: calert.where_clause,
             };
-            let incident =
-                Incidents::ginsert(conn, &[incident]).expect("Failed to insert a new incident");
+            let incident = incident
+                .ginsert(conn)
+                .expect("Failed to insert a new incident");
             super::mail::send_alert(&incident);
         }
     }

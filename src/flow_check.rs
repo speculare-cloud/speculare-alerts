@@ -39,7 +39,7 @@ pub fn flow_check_start(pool: Pool) {
         let _ = std::mem::replace(&mut *x, alerts_config);
     }
 
-    let conn = match pool.get() {
+    let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
             error!("Cannot get a conn for the alerts_from_config: {}", e);
@@ -48,7 +48,7 @@ pub fn flow_check_start(pool: Pool) {
     };
 
     // Convert the AlertsConfig to alert
-    let alerts: Vec<Alerts> = match alerts_from_config(&conn) {
+    let alerts: Vec<Alerts> = match alerts_from_config(&mut conn) {
         Ok(alerts) => alerts,
         Err(e) => {
             error!("Failed to launch monitoring: {}", e);
@@ -68,7 +68,7 @@ pub fn flow_check_start(pool: Pool) {
                 std::process::exit(1);
             }
         };
-        execute_analysis(&query, &alert, &qtype, &pool.get().unwrap());
+        execute_analysis(&query, &alert, &qtype, &mut conn);
     }
 
     println!("\nEverything went well, no errors found !");
