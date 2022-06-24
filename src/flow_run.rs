@@ -47,6 +47,7 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
 
     // Doing it in a loop to attempt to reconnect to CDC
     // if a crash of CDC/network happens.
+    let mut count = 0u8;
     loop {
         if CONFIG.alerts_source == AlertSource::Files {
             // Start a WebSocket listening for inserted hosts to set up alerts.
@@ -63,5 +64,12 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
         error!("Main loop: attempt to recover the CDC connection, waiting 5s");
         // Avoid spamming CPU in case of crash loop
         thread::sleep(Duration::from_secs(5));
+
+        count += 1;
+
+        if count >= 3 {
+            error!("Main loop: boot loop, stopping...");
+            std::process::exit(1);
+        }
     }
 }
