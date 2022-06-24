@@ -11,6 +11,7 @@ use sproot::{
     Pool,
 };
 use std::io::{Error, ErrorKind};
+use tokio_tungstenite::tungstenite::Error::{AlreadyClosed, ConnectionClosed, Io as TIo};
 
 /// Connect to websocket and execute new alerts
 pub async fn listen_hosts_changes(pool: &Pool) -> std::io::Result<()> {
@@ -28,7 +29,16 @@ pub async fn listen_hosts_changes(pool: &Pool) -> std::io::Result<()> {
     // While we have some message, read them and wait for the next one
     while let Some(msg) = ws_stream.next().await {
         match msg {
-            Err(err) => error!("WebSocket: message is an error: {}", err),
+            Err(err) => {
+                match err {
+                    // Consider those kind of error as fatal
+                    ConnectionClosed | AlreadyClosed | TIo(_) => {
+                        error!("WebSocket: error is fatal: {}", err);
+                        return Err(Error::new(ErrorKind::Other, err));
+                    }
+                    _ => debug!("WebSocket: error is non-fatal: {}", err),
+                }
+            }
             Ok(msg) if msg.is_text() => {
                 // Convert msg into String
                 let mut msg = msg.into_text().expect("Cannot convert message to text");
