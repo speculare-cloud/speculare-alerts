@@ -2,19 +2,23 @@ use std::{thread, time::Duration};
 
 use crate::{
     utils::{
-        mail::test_smtp_transport, monitoring::launch_monitoring, ws_alerts::listen_alerts_changes,
-        ws_hosts::listen_hosts_changes,
+        mail::test_smtp_transport,
+        monitoring::launch_monitoring,
+        websocket::{msg_err_handler, WsHandler},
+        ws_alerts::msg_ok_database,
+        ws_hosts::msg_ok_files,
     },
     CONFIG,
 };
 
 use sproot::{
+    errors::AppError,
     models::{AlertSource, Alerts},
     Pool,
 };
 
 /// Will start the program normally (launch alerts, ...)
-pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
+pub async fn flow_run_start(pool: Pool) -> Result<(), AppError> {
     // Check if the SMTP server host is "ok"
     test_smtp_transport();
 
@@ -42,23 +46,32 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
     }
 
     // Launch the monitoring of each alarms
-    launch_monitoring(pool.clone())
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.message()))?;
+    launch_monitoring(&pool)?;
 
-    // Doing it in a loop to attempt to reconnect to CDC
-    // if a crash of CDC/network happens.
+    let ws_handler = if CONFIG.alerts_source == AlertSource::Files {
+        WsHandler {
+            query: "insert,delete",
+            table: "hosts",
+            msg_error: msg_err_handler,
+            msg_ok: msg_ok_files,
+            pool: &pool,
+        }
+    } else {
+        WsHandler {
+            query: "*",
+            table: "alerts",
+            msg_error: msg_err_handler,
+            msg_ok: msg_ok_database,
+            pool: &pool,
+        }
+    };
+    // Creating a loop to attempt to reconnect to CDC if a crash of CDC/network happens.
+    // but apply a hard limit of 3 tries
     let mut count = 0u8;
     loop {
-        if CONFIG.alerts_source == AlertSource::Files {
-            // Start a WebSocket listening for inserted hosts to set up alerts.
-            if let Err(e) = listen_hosts_changes(&pool).await {
-                error!("listen_hosts_changes: error: {}", e);
-            }
-        } else {
-            // Start a WebSocket listening for new/deleted/update alerts.
-            if let Err(e) = listen_alerts_changes(&pool).await {
-                error!("listen_alerts_changes: error: {}", e);
-            }
+        // Create and start listening on the Websocket
+        if let Err(err) = ws_handler.listen().await {
+            error!("AlertSource::Database: stream error: {}", err);
         }
 
         error!("Main loop: attempt to recover the CDC connection, waiting 5s");
@@ -66,7 +79,6 @@ pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
         thread::sleep(Duration::from_secs(5));
 
         count += 1;
-
         if count >= 3 {
             error!("Main loop: boot loop, stopping...");
             std::process::exit(1);

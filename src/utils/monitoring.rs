@@ -67,40 +67,36 @@ pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> 
     Ok(alerts)
 }
 
-fn alerts_from_files(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_files(pool: &Pool) -> Result<Vec<Alerts>, AppError> {
     // Get the AlertsConfig from the ALERTS_PATH folder
-    let alerts_config: Vec<AlertsConfig> =
-        match AlertsConfig::from_configs_path(&CONFIG.alerts_path) {
-            Ok(alerts) => alerts,
-            Err(_) => std::process::exit(1),
-        };
+    let alerts_config: Vec<AlertsConfig> = AlertsConfig::from_configs_path(&CONFIG.alerts_path)?;
     // New scope: Drop the lock as soon as it's not needed anymore
     {
         // Move the local alerts_config Vec to the global ALERTS_CONFIG
         let mut x = ALERTS_CONFIG.write().unwrap();
         let _ = std::mem::replace(&mut *x, alerts_config);
     }
+    trace!("alerts_from_files: read from the alerts_path");
 
     // Convert the AlertsConfig to alerts
-    alerts_from_config(conn)
+    alerts_from_config(&mut pool.get()?)
 }
 
-fn alerts_from_database(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, AppError> {
     // Get the alerts from the database
-    Alerts::get_list(conn)
+    Alerts::get_list(&mut pool.get()?)
 }
 
 /// Start the monitoring tasks for each alarms
-pub fn launch_monitoring(pool: Pool) -> Result<(), AppError> {
-    let conn = &mut pool.get()?;
+pub fn launch_monitoring(pool: &Pool) -> Result<(), AppError> {
     let alerts = match if CONFIG.alerts_source == AlertSource::Files {
-        alerts_from_files(conn)
+        alerts_from_files(pool)
     } else {
-        alerts_from_database(conn)
+        alerts_from_database(pool)
     } {
         Ok(alerts) => alerts,
-        Err(e) => {
-            error!("Cannot get the alerts: {}", e);
+        Err(err) => {
+            error!("monitoring: fatal error: {}", err);
             std::process::exit(1);
         }
     };
