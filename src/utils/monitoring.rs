@@ -3,13 +3,13 @@ use crate::{ALERTS_CONFIG, CONFIG};
 use super::alerts::start_alert_task;
 
 use sproot::{
-    errors::AppError,
+    apierrors::ApiError,
     models::AlertSource,
     models::{Alerts, AlertsConfig, Host, HostTargeted},
     ConnType, Pool,
 };
 
-pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> {
+pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, ApiError> {
     // TODO - If more than 50 hosts, get them too (paging).
     let hosts = &Host::list_hosts(conn, 50, 0)?;
 
@@ -22,13 +22,10 @@ pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> 
             HostTargeted::SPECIFIC(val) => {
                 let thosts: Vec<&Host> = hosts.iter().filter(|h| &h.uuid == val).collect();
                 if thosts.len() != 1 {
-                    return Err(AppError {
-                        message: format!(
-                            "The host {} in the AlertConfig {} does not exists.",
-                            &val, &aconfig.name
-                        ),
-                        error_type: sproot::errors::AppErrorType::NotFound,
-                    });
+                    return Err(ApiError::ServerError(format!(
+                        "The host {} in the AlertConfig {} does not exists.",
+                        &val, &aconfig.name
+                    )));
                 }
                 let id = Alerts::generate_id_from(&thosts[0].uuid, &aconfig.name);
 
@@ -67,7 +64,7 @@ pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, AppError> 
     Ok(alerts)
 }
 
-fn alerts_from_files(pool: &Pool) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_files(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
     // Get the AlertsConfig from the ALERTS_PATH folder
     let alerts_config: Vec<AlertsConfig> = AlertsConfig::from_configs_path(&CONFIG.alerts_path)?;
     // New scope: Drop the lock as soon as it's not needed anymore
@@ -82,13 +79,13 @@ fn alerts_from_files(pool: &Pool) -> Result<Vec<Alerts>, AppError> {
     alerts_from_config(&mut pool.get()?)
 }
 
-fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, AppError> {
+fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
     // Get the alerts from the database
     Alerts::get_list(&mut pool.get()?)
 }
 
 /// Start the monitoring tasks for each alarms
-pub fn launch_monitoring(pool: &Pool) -> Result<(), AppError> {
+pub fn launch_monitoring(pool: &Pool) {
     let alerts = match if CONFIG.alerts_source == AlertSource::Files {
         alerts_from_files(pool)
     } else {
@@ -105,6 +102,4 @@ pub fn launch_monitoring(pool: &Pool) -> Result<(), AppError> {
     for alert in alerts {
         start_alert_task(alert, pool.clone())
     }
-
-    Ok(())
 }

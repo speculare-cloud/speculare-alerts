@@ -6,7 +6,6 @@ use crate::utils::config::Config;
 use ahash::AHashMap;
 use clap::{Parser, Subcommand};
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
-use sproot::errors::AppError;
 use sproot::models::AlertsConfig;
 use sproot::prog;
 use std::sync::RwLock;
@@ -51,7 +50,7 @@ lazy_static::lazy_static! {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), AppError> {
+async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
     // Init logger

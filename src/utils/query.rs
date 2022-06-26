@@ -4,11 +4,7 @@ use super::{pct, AbsDTORaw, PctDTORaw, QueryType};
 
 use diesel::{sql_types::Text, *};
 use regex::Regex;
-use sproot::{
-    errors::{AppError, AppErrorType},
-    models::Alerts,
-    ConnType,
-};
+use sproot::{apierrors::ApiError, models::Alerts, ConnType};
 
 lazy_static::lazy_static! {
     static ref INTERVAL_RGX: Regex = {
@@ -23,16 +19,13 @@ lazy_static::lazy_static! {
 }
 
 /// Create the query for the Alert and get the QueryType
-pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> {
+pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), ApiError> {
     // Split the lookup String from the alert for analysis
     let lookup_parts: Vec<&str> = alert.lookup.split(' ').collect();
 
     // Assert that we have enough parameters
     if lookup_parts.len() < 5 {
-        return Err(AppError {
-            message: "query: the lookup query is invalid, define as follow: [aggr] [mode] [timeframe] of [table] {over} {table}".to_owned(),
-            error_type: AppErrorType::ServerError
-        });
+        return Err(ApiError::ServerError(String::from("query: the lookup query is invalid, define as follow: [aggr] [mode] [timeframe] of [table] {over} {table}")));
     }
 
     // Determine the mode of the query it's for now, either Pct or Abs
@@ -40,43 +33,36 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
         "pct" => QueryType::Pct,
         "abs" => QueryType::Abs,
         _ => {
-            return Err(AppError {
-                message: format!(
-                    "query: mode {} is invalid. Valid are: pct, abs.",
-                    lookup_parts[1]
-                ),
-                error_type: AppErrorType::ServerError,
-            });
+            return Err(ApiError::ServerError(format!(
+                "query: mode {} is invalid. Valid are: pct, abs.",
+                lookup_parts[1]
+            )));
         }
     };
 
     // If we're in mode Pct, we need more than 5 parts
     if req_mode == QueryType::Pct && lookup_parts.len() != 7 {
-        return Err(AppError {
-            message: "query: lookup defined as mode pct but missing values, check usage."
-                .to_owned(),
-            error_type: AppErrorType::ServerError,
-        });
+        return Err(ApiError::ServerError(String::from(
+            "query: lookup defined as mode pct but missing values, check usage.",
+        )));
     }
 
     // The type of the query this is pretty much the aggregation function Postgres is going to use
     let req_aggr = lookup_parts[0];
     // Assert that req_type is correct (avg, sum, min, max, count)
     if !["avg", "sum", "min", "max", "count"].contains(&req_aggr) {
-        return Err(AppError {
-            message: "query: aggr is invalid. Valid are: avg, sum, min, max, count.".to_owned(),
-            error_type: AppErrorType::ServerError,
-        });
+        return Err(ApiError::ServerError(String::from(
+            "query: aggr is invalid. Valid are: avg, sum, min, max, count.",
+        )));
     }
 
     // Get the timing of the query, that is the interval range
     let req_time = lookup_parts[2];
     // Assert that req_time is correctly formatted (Regex?)
     if !INTERVAL_RGX.is_match(req_time) {
-        return Err(AppError {
-            message: "query: req_time is not correctly formatted (doesn't pass regex).".to_owned(),
-            error_type: AppErrorType::ServerError,
-        });
+        return Err(ApiError::ServerError(String::from(
+            "query: req_time is not correctly formatted (doesn't pass regex).",
+        )));
     }
 
     // This is the columns we ask for in the first place, this value is mandatory
@@ -130,13 +116,10 @@ pub fn construct_query(alert: &Alerts) -> Result<(String, QueryType), AppError> 
     let tmp_query = query.to_uppercase();
     for statement in DISALLOWED_STATEMENT {
         if tmp_query.contains(statement) {
-            return Err(AppError {
-                message: format!(
-                    "Alert {} for host_uuid {:.6} contains disallowed statement \"{}\"",
-                    alert.name, alert.host_uuid, statement
-                ),
-                error_type: AppErrorType::ServerError,
-            });
+            return Err(ApiError::ServerError(format!(
+                "Alert {} for host_uuid {:.6} contains disallowed statement \"{}\"",
+                alert.name, alert.host_uuid, statement
+            )));
         }
     }
 
@@ -150,7 +133,7 @@ pub fn execute_query(
     host_uuid: &str,
     qtype: &QueryType,
     conn: &mut ConnType,
-) -> Result<String, AppError> {
+) -> Result<String, ApiError> {
     // Based on the type we decide which way to go
     // Each type has their own return structure and conversion method (from struct to String).
     match qtype {
@@ -166,10 +149,9 @@ pub fn execute_query(
                 .load::<AbsDTORaw>(conn)?;
             trace!("result abs is {:?}", &results);
             if results.is_empty() {
-                Err(AppError {
-                    message: "The result of the query (abs) is empty".to_owned(),
-                    error_type: AppErrorType::NotFound,
-                })
+                Err(ApiError::NotFoundError(String::from(
+                    "the result of the query (abs) is empty",
+                )))
             } else {
                 Ok(results[0].value.to_string())
             }

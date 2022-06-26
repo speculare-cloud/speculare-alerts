@@ -36,7 +36,7 @@ impl<'a> WsHandler<'a> {
     pub async fn listen(&self) -> std::io::Result<()> {
         let mut ws_stream = self.open_connection().await?;
 
-		trace!("listening on the websocket");
+        trace!("listening on the websocket");
         // While we have some message, read them and wait for the next one
         while let Some(msg) = ws_stream.next().await {
             match msg {

@@ -12,13 +12,12 @@ use crate::{
 };
 
 use sproot::{
-    errors::AppError,
     models::{AlertSource, Alerts},
     Pool,
 };
 
 /// Will start the program normally (launch alerts, ...)
-pub async fn flow_run_start(pool: Pool) -> Result<(), AppError> {
+pub async fn flow_run_start(pool: Pool) -> std::io::Result<()> {
     // Check if the SMTP server host is "ok"
     test_smtp_transport();
 
@@ -46,7 +45,7 @@ pub async fn flow_run_start(pool: Pool) -> Result<(), AppError> {
     }
 
     // Launch the monitoring of each alarms
-    launch_monitoring(&pool)?;
+    launch_monitoring(&pool);
 
     let ws_handler = if CONFIG.alerts_source == AlertSource::Files {
         WsHandler {
