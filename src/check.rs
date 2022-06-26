@@ -1,18 +1,19 @@
 use crate::{
     utils::{
-        analysis::execute_analysis, mail::test_smtp_transport, monitoring::alerts_from_config,
-        query::construct_query,
+        alerts::{alerts_from_config, AlertsQuery, WholeAlert},
+        analysis::execute_analysis,
+        mail::test_smtp_transport,
     },
     ALERTS_CONFIG, CONFIG,
 };
 
 use sproot::{
-    models::{AlertSource, Alerts, AlertsConfig},
+    models::{AlertSource, AlertsConfig},
     Pool,
 };
 
 /// Will check the AlertsConfig & SMTP syntax for potential errors
-pub fn flow_check_start(pool: Pool) {
+pub fn dry_run(pool: Pool) {
     // Check if the SMTP server host is "ok"
     test_smtp_transport();
 
@@ -48,8 +49,19 @@ pub fn flow_check_start(pool: Pool) {
     };
 
     // Convert the AlertsConfig to alert
-    let alerts: Vec<Alerts> = match alerts_from_config(&mut conn) {
-        Ok(alerts) => alerts,
+    let alerts: Vec<WholeAlert> = match alerts_from_config(&mut conn) {
+        Ok(alerts) => alerts
+            .into_iter()
+            .map(|alert| {
+                let (query, qtype) = alert.get_query();
+
+                WholeAlert {
+                    inner: alert,
+                    query,
+                    qtype,
+                }
+            })
+            .collect(),
         Err(e) => {
             error!("Failed to launch monitoring: {}", e);
             std::process::exit(1);
@@ -58,17 +70,7 @@ pub fn flow_check_start(pool: Pool) {
 
     // Dry run for the alerts and exit in case of error
     for alert in alerts {
-        let (query, qtype) = match construct_query(&alert) {
-            Ok((query, qtype)) => (query, qtype),
-            Err(e) => {
-                error!(
-                    "Alert {} for host_uuid {:.6} cannot build the query: {}",
-                    alert.name, alert.host_uuid, e
-                );
-                std::process::exit(1);
-            }
-        };
-        execute_analysis(&query, &alert, &qtype, &mut conn);
+        execute_analysis(&alert, &mut conn);
     }
 
     println!("\nEverything went well, no errors found !");

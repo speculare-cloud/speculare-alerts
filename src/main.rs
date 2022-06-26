@@ -1,17 +1,19 @@
 #[macro_use]
 extern crate log;
 
+use crate::sp_alerts::SpAlerts;
 use crate::utils::config::Config;
 
 use ahash::AHashMap;
 use clap::{Parser, Subcommand};
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
+use futures::FutureExt;
 use sproot::models::AlertsConfig;
 use sproot::prog;
 use std::sync::RwLock;
 
-mod flow_check;
-mod flow_run;
+mod check;
+mod sp_alerts;
 mod utils;
 
 #[derive(Parser, Debug)]
@@ -80,14 +82,12 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    debug!("AlertSource is defined to {:?}", CONFIG.alerts_source);
-
     // Dispatch subcommands
     if let Some(Commands::Check) = &args.command {
-        flow_check::flow_check_start(pool);
+        check::dry_run(pool);
         std::process::exit(0);
     }
 
-    // Run the normal flow (start alerts, ...)
-    flow_run::flow_run_start(pool).await
+    let sp_alerts = SpAlerts::default(&pool);
+    sp_alerts.prepare().then(|_| sp_alerts.serve()).await
 }

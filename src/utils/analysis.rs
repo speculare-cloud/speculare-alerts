@@ -1,4 +1,4 @@
-use super::{query::execute_query, IncidentStatus, QueryType, Severity};
+use super::{alerts::WholeAlert, query::execute_query, IncidentStatus, Severity};
 
 use chrono::prelude::Utc;
 use evalexpr::*;
@@ -11,20 +11,20 @@ use sproot::{
 /// This function is the core of the monitoring, this is where we:
 /// - Execute the query and get the result
 /// - Evaluate if we need to trigger an incidents or not
-pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &mut ConnType) {
+pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
     info!(
         "Executing {} analysis for {:.6}",
-        alert.name, alert.host_uuid
+        walert.inner.name, walert.inner.host_uuid
     );
     // Execute the query passed as arguement (this query was build previously)
-    let result = match execute_query(query, &alert.host_uuid, qtype, conn) {
+    let result = match execute_query(&walert.query, &walert.inner.host_uuid, &walert.qtype, conn) {
         Ok(result) => result,
         Err(err) => match err {
             ApiError::NotFoundError(_) => return,
             _ => {
                 error!(
                     "Analysis: alert {} for host_uuid {:.6} execute_query failed: {}",
-                    alert.name, alert.host_uuid, err
+                    walert.inner.name, walert.inner.host_uuid, err
                 );
                 std::process::exit(1);
             }
@@ -33,29 +33,29 @@ pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &m
     trace!("> Result of the query is {}", &result);
 
     // Determine if we are in a Warn or Crit level of incidents
-    let should_warn = eval_boolean(&alert.warn.replace("$this", &result)).unwrap_or_else(|e| {
+    let should_warn = eval_boolean(&walert.inner.warn.replace("$this", &result)).unwrap_or_else(|e| {
         error!(
             "alert {} for host_uuid {:.6} failed to parse the String to an expression (warn: {}): {}",
-            alert.name, alert.host_uuid, alert.warn, e
+            walert.inner.name, walert.inner.host_uuid, walert.inner.warn, e
         );
         std::process::exit(1);
     });
-    let should_crit = eval_boolean(&alert.crit.replace("$this", &result)).unwrap_or_else(|e| {
+    let should_crit = eval_boolean(&walert.inner.crit.replace("$this", &result)).unwrap_or_else(|e| {
         error!(
             "alert {} for host_uuid {:.6} failed to parse the String to an expression (crit: {}): {}",
-            alert.name, alert.host_uuid, alert.warn, e
+            walert.inner.name, walert.inner.host_uuid, walert.inner.warn, e
         );
         std::process::exit(1);
     });
     trace!("> Should warn/crit {}, {}", should_warn, should_crit);
 
     // Check if an active incident already exist for this alarm.
-    let prev_incident: Option<Incidents> = match Incidents::find_active(conn, &alert.id) {
+    let prev_incident: Option<Incidents> = match Incidents::find_active(conn, &walert.inner.id) {
         Ok(res) => Some(res),
         Err(e) => {
             warn!(
                 "alert {} for host_uuid {:.6} checking previous exists failed: {}",
-                alert.name, alert.host_uuid, e
+                walert.inner.name, walert.inner.host_uuid, e
             );
             None
         }
@@ -131,7 +131,7 @@ pub fn execute_analysis(query: &str, alert: &Alerts, qtype: &QueryType, conn: &m
         None => {
             info!("> Create a new incident based on the current values");
             // Clone the alert to allow us to own it in the IncidentsDTO
-            let calert: Alerts = alert.clone();
+            let calert: Alerts = walert.inner.clone();
             let incident = IncidentsDTO {
                 result,
                 started_at: Utc::now().naive_local(),
