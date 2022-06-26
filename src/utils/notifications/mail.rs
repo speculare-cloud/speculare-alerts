@@ -67,7 +67,6 @@ struct IncidentTemplate<'a> {
     hostname: &'a str,
     severity: &'a str,
     started_at: &'a str,
-    updated_at: &'a str,
     lookup: &'a str,
     result: &'a str,
     warn: &'a str,
@@ -81,8 +80,9 @@ struct ResolvedTemplate<'a> {
     incident_id: i32,
     alert_name: &'a str,
     hostname: &'a str,
+    severity: &'a str,
     started_at: &'a str,
-    updated_at: &'a str,
+    resolved_at: &'a str,
 }
 
 fn send_mail(incident: &Incidents, template: String) {
@@ -138,7 +138,6 @@ pub fn send_alert(incident: &Incidents) {
             hostname: &incident.hostname,
             severity: &incident_severity,
             started_at: &started_at,
-            updated_at: &updated_at,
             lookup: &incident.alerts_lookup,
             result: &incident.result,
             warn: &incident.alerts_warn,
@@ -150,8 +149,9 @@ pub fn send_alert(incident: &Incidents) {
             incident_id: incident.id,
             alert_name: &incident.alerts_name,
             hostname: &incident.hostname,
+            severity: &incident_severity,
             started_at: &started_at,
-            updated_at: &updated_at,
+            resolved_at: &updated_at,
         }
         .render()
         .unwrap(),
@@ -165,7 +165,6 @@ pub fn send_alert(incident: &Incidents) {
 #[template(path = "escalate.html")]
 struct EscalateTemplate<'a> {
     incident_id: i32,
-    alert_name: &'a str,
     hostname: &'a str,
     severity: &'a str,
     started_at: &'a str,
@@ -184,7 +183,6 @@ pub fn send_escalate(incident: &Incidents) {
 
     let escalate_template = EscalateTemplate {
         incident_id: incident.id,
-        alert_name: &incident.alerts_name,
         hostname: &incident.hostname,
         severity: &incident_severity,
         started_at: &started_at,
