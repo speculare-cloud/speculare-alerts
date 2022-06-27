@@ -28,7 +28,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                     "Analysis: alert {} for host_uuid {:.6} execute_query failed: {}",
                     walert.inner.name, walert.inner.host_uuid, err
                 );
-                std::process::exit(1);
+                panic!();
             }
         },
     };
@@ -40,14 +40,14 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             "alert {} for host_uuid {:.6} failed to parse the String to an expression (warn: {}): {}",
             walert.inner.name, walert.inner.host_uuid, walert.inner.warn, e
         );
-        std::process::exit(1);
+        panic!();
     });
     let should_crit = eval_boolean(&walert.inner.crit.replace("$this", &result)).unwrap_or_else(|e| {
         error!(
             "alert {} for host_uuid {:.6} failed to parse the String to an expression (crit: {}): {}",
             walert.inner.name, walert.inner.host_uuid, walert.inner.warn, e
         );
-        std::process::exit(1);
+        panic!();
     });
     trace!("> Should warn/crit {}, {}", should_warn, should_crit);
 

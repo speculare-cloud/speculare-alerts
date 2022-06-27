@@ -9,6 +9,8 @@ edition = "2018"
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
 ahash = "0.7"
 askama = "0.11"
+bastion = "0.4"
+bastion-executor = { version = "0.4", features = ["tokio-runtime"] }
 clap = { version = "3.1", features = ["derive"] }
 clap-verbosity-flag = "1.0"
 chrono = { version = "0.4", features = ["serde"] }

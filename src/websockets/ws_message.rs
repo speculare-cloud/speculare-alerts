@@ -1,7 +1,6 @@
 use crate::{
     monitoring::alerts::{AlertsQuery, WholeAlert},
     utils::{CdcChange, CdcKind},
-    RUNNING_ALERT,
 };
 
 use sproot::Pool;
@@ -58,14 +57,7 @@ pub fn msg_ok_database(msg: Message, pool: &Pool) {
         }
         CdcKind::Update | CdcKind::Delete => {
             info!("Websocket: running CdcKind::Update or CdcKind::Delete");
-            {
-                // Stop the task's "thread" in it's own scope to drop the lock asap
-                let mut running = RUNNING_ALERT.write().unwrap();
-                let task = running.remove(&alert.inner.id);
-                if let Some(task) = task {
-                    task.abort();
-                }
-            }
+            alert.stop_monitoring();
 
             // If it's an Update, start the task again
             if data.kind == CdcKind::Update {

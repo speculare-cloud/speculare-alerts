@@ -6,9 +6,10 @@ use crate::notifications::mail;
 use crate::utils::config::Config;
 
 use ahash::AHashMap;
+use bastion::prelude::ChildrenRef;
+use bastion::Bastion;
 use clap::Parser;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
-use sproot::models::AlertsConfig;
 use sproot::{prog, Pool};
 use std::sync::RwLock;
 use std::{thread, time::Duration};
@@ -40,11 +41,7 @@ lazy_static::lazy_static! {
         }
     };
 
-    // Be warned that it is not guarantee that the task is currently running.
-    // The task could have been aborted sooner due to the sanity check of the query.
-    static ref RUNNING_ALERT: RwLock<AHashMap<String, tokio::task::JoinHandle<()>>> = RwLock::new(AHashMap::new());
-    // List of the AlertsConfig (to be used in the WSS)
-    static ref ALERTS_CONFIG: RwLock<Vec<AlertsConfig>> = RwLock::new(Vec::new());
+    static ref RUNNING_CHILDREN: RwLock<AHashMap<String, ChildrenRef>> = RwLock::new(AHashMap::new());
 }
 
 fn init_pool() -> Pool {
@@ -82,6 +79,10 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize the connections'pool (r2d2 sync)
     let pool = init_pool();
+
+    // Init Bastion supervisor
+    Bastion::init();
+    Bastion::start();
 
     // Build the Ws handler to listen for the alerts table
     let ws_handler = WsHandler {
