@@ -1,6 +1,6 @@
-use sproot::{apierrors::ApiError, models::Alerts, Pool};
+use super::alerts::{alerts_from_database, AlertsQuery, WholeAlert};
 
-use super::alerts::{AlertsQuery, WholeAlert};
+use sproot::Pool;
 
 pub struct Monitor {
     alerts: Vec<WholeAlert>,
@@ -40,9 +40,4 @@ impl Monitor {
             alert.start_monitoring(self.pool.clone());
         }
     }
-}
-
-fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
-    // Get the alerts from the database
-    Alerts::get_list(&mut pool.get()?)
 }

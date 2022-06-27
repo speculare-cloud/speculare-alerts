@@ -4,18 +4,8 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 
-mod qtype;
-pub use qtype::*;
-
-mod notifications;
-pub use notifications::*;
-
-pub mod alerts;
-pub mod analysis;
 pub mod config;
 pub mod impls;
-pub mod monitor;
-pub mod query;
 
 /// Enum used to hold either i32, String or Option<String> (from CDC)
 ///
@@ -84,60 +74,3 @@ pub const DISALLOWED_STATEMENT: &[&str] = &[
     "SAVEPOINT",
     "ROLLBACK",
 ];
-
-/// Enum representing the current Status of the Incidents
-pub enum IncidentStatus {
-    Active,
-    Resolved,
-}
-
-impl std::fmt::Display for IncidentStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            IncidentStatus::Active => {
-                write!(f, "Active")
-            }
-            IncidentStatus::Resolved => {
-                write!(f, "Resolved")
-            }
-        }
-    }
-}
-
-impl From<i32> for IncidentStatus {
-    fn from(v: i32) -> Self {
-        match v {
-            0 => IncidentStatus::Active,
-            _ => IncidentStatus::Resolved,
-        }
-    }
-}
-
-/// Enum representing the Severity of the Incidents
-#[derive(Clone)]
-pub enum Severity {
-    Warning,
-    Critical,
-}
-
-impl std::fmt::Display for Severity {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Severity::Warning => {
-                write!(f, "Warning")
-            }
-            Severity::Critical => {
-                write!(f, "Critical")
-            }
-        }
-    }
-}
-
-impl From<i32> for Severity {
-    fn from(v: i32) -> Self {
-        match v {
-            0 => Severity::Warning,
-            _ => Severity::Critical,
-        }
-    }
-}

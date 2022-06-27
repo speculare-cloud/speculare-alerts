@@ -4,7 +4,7 @@ use super::analysis::execute_analysis;
 use super::query::construct_query;
 use super::QueryType;
 
-use sproot::{models::Alerts, ConnType, Pool};
+use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use std::time::Duration;
 
 pub trait AlertsQuery {
@@ -72,4 +72,9 @@ impl WholeAlert {
         // Add the task into our AHashMap protected by RwLock (multiple readers, one write at most)
         RUNNING_ALERT.write().unwrap().insert(cid, alert_task);
     }
+}
+
+pub fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
+    // Get the alerts from the database
+    Alerts::get_list(&mut pool.get()?)
 }

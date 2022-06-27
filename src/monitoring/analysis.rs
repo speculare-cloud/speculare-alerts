@@ -1,3 +1,5 @@
+use crate::notifications::mail;
+
 use super::{alerts::WholeAlert, query::execute_query, IncidentStatus, Severity};
 
 use chrono::prelude::Utc;
@@ -78,7 +80,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             let incident = incident_dto
                 .gupdate(conn, incident_id)
                 .expect("Failed to update (resolve) the incidents");
-            super::mail::send_alert(&incident);
+            mail::send_alert(&incident);
         }
         return;
     }
@@ -125,7 +127,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 .gupdate(conn, incident_id)
                 .expect("Failed to update the incidents");
             if should_alert {
-                super::mail::send_escalate(&incident);
+                mail::send_escalate(&incident);
             }
         }
         None => {
@@ -153,7 +155,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             let incident = incident
                 .ginsert(conn)
                 .expect("Failed to insert a new incident");
-            super::mail::send_alert(&incident);
+            mail::send_alert(&incident);
         }
     }
 }

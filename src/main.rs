@@ -1,20 +1,22 @@
 #[macro_use]
 extern crate log;
 
+use crate::monitoring::monitor::Monitor;
+use crate::notifications::mail;
 use crate::utils::config::Config;
-use crate::utils::monitor::Monitor;
 
 use ahash::AHashMap;
 use clap::Parser;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 use sproot::models::AlertsConfig;
 use sproot::{prog, Pool};
-use websockets::ws_handler::WsHandler;
-use websockets::ws_message::{msg_err_handler, msg_ok_database};
 use std::sync::RwLock;
 use std::{thread, time::Duration};
-use utils::mail::test_smtp_transport;
+use websockets::ws_handler::WsHandler;
+use websockets::ws_message::{msg_err_handler, msg_ok_database};
 
+mod monitoring;
+mod notifications;
 mod utils;
 mod websockets;
 
@@ -78,8 +80,10 @@ async fn main() -> std::io::Result<()> {
         .filter_module("sproot", args.verbose.log_level_filter())
         .init();
 
+    // Initialize the connections'pool (r2d2 sync)
     let pool = init_pool();
 
+    // Build the Ws handler to listen for the alerts table
     let ws_handler = WsHandler {
         query: "*",
         table: "alerts",
@@ -89,8 +93,9 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Check if the SMTP server host is "ok"
-    test_smtp_transport();
+    mail::test_smtp_transport();
 
+    // Build the default monitor struct
     let monitor = Monitor::default(&pool);
     // Run the foreach loop over each alarms and start monitoring them.
     monitor.oneshot();

@@ -1,6 +1,5 @@
-use crate::utils::DISALLOWED_STATEMENT;
-
-use super::{pct, AbsDTORaw, PctDTORaw, QueryType};
+use crate::monitoring::{pct, QueryType};
+use crate::utils::{AbsDTORaw, PctDTORaw, DISALLOWED_STATEMENT};
 
 use diesel::{sql_types::Text, *};
 use regex::Regex;

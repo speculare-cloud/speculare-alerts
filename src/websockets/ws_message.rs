@@ -1,8 +1,6 @@
 use crate::{
-    utils::{
-        alerts::{AlertsQuery, WholeAlert},
-        CdcChange, CdcKind,
-    },
+    monitoring::alerts::{AlertsQuery, WholeAlert},
+    utils::{CdcChange, CdcKind},
     RUNNING_ALERT,
 };
 
