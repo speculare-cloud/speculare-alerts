@@ -1,11 +1,9 @@
-use crate::{ALERTS_CONFIG, CONFIG, RUNNING_ALERT};
+use crate::RUNNING_ALERT;
 
 use super::analysis::execute_analysis;
 use super::query::construct_query;
 use super::QueryType;
 
-use sproot::apierrors::ApiError;
-use sproot::models::{AlertSource, Host, HostTargeted};
 use sproot::{models::Alerts, ConnType, Pool};
 use std::time::Duration;
 
@@ -48,8 +46,7 @@ impl WholeAlert {
 
     /// Create the task for a particular alert and add it to the RUNNING_ALERT.
     pub fn start_monitoring(self, pool: Pool) {
-        let calert = self.clone();
-        let cpool = pool.clone();
+        let cid = self.inner.id.clone();
         // Spawn a new task which will do the check for that particular alerts
         // Save the JoinHandle so we can abort if needed later
         let alert_task: tokio::task::JoinHandle<()> = tokio::spawn(async move {
@@ -71,77 +68,8 @@ impl WholeAlert {
                 execute_analysis(&self, &mut self.get_conn(&pool));
             }
         });
+
         // Add the task into our AHashMap protected by RwLock (multiple readers, one write at most)
-        RUNNING_ALERT
-            .write()
-            .unwrap()
-            .insert(calert.inner.id.clone(), alert_task);
-
-        // Add the Alert to the database if we're in Files mode
-        if CONFIG.alerts_source == AlertSource::Files {
-            let alert_id = calert.inner.id.clone();
-            match Alerts::insert(&mut calert.get_conn(&cpool), &[calert.inner]) {
-                Ok(_) => info!("Alert {} added to the database", alert_id),
-                Err(e) => {
-                    error!("Cannot add the alerts to the database: {}", e);
-                    std::process::exit(1);
-                }
-            };
-        }
+        RUNNING_ALERT.write().unwrap().insert(cid, alert_task);
     }
-}
-
-pub fn alerts_from_config(conn: &mut ConnType) -> Result<Vec<Alerts>, ApiError> {
-    // TODO - If more than 50 hosts, get them too (paging).
-    let hosts = &Host::list_hosts(conn, 50, 0)?;
-
-    let mut alerts: Vec<Alerts> = Vec::new();
-    // For each alerts config, create the Alerts corresponding
-    // with the host & host_uuid & id defined.
-    for aconfig in &*ALERTS_CONFIG.read().unwrap() {
-        let cloned_config = aconfig.clone();
-        match aconfig.host_targeted.as_ref().unwrap() {
-            HostTargeted::SPECIFIC(val) => {
-                let thosts: Vec<&Host> = hosts.iter().filter(|h| &h.uuid == val).collect();
-                if thosts.len() != 1 {
-                    return Err(ApiError::ServerError(format!(
-                        "The host {} in the AlertConfig {} does not exists.",
-                        &val, &aconfig.name
-                    )));
-                }
-                let id = Alerts::generate_id_from(&thosts[0].uuid, &aconfig.name);
-
-                info!(
-                    "Created the alert {} for {:.6} with id {}",
-                    &aconfig.name, thosts[0].uuid, id
-                );
-
-                alerts.push(Alerts::build_from_config(
-                    cloned_config,
-                    thosts[0].uuid.to_owned(),
-                    thosts[0].hostname.to_owned(),
-                    id,
-                ));
-            }
-            HostTargeted::ALL => {
-                for host in hosts {
-                    let id = Alerts::generate_id_from(&host.uuid, &aconfig.name);
-
-                    info!(
-                        "Created the alert {} for {:.6} with id {}",
-                        &aconfig.name, host.uuid, id
-                    );
-
-                    alerts.push(Alerts::build_from_config(
-                        cloned_config.clone(),
-                        host.uuid.to_owned(),
-                        host.hostname.to_owned(),
-                        id,
-                    ));
-                }
-            }
-        }
-    }
-
-    Ok(alerts)
 }

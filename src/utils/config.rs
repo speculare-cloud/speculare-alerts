@@ -4,16 +4,11 @@ use clap::Parser;
 use config::ConfigError;
 use lettre::message::Mailbox;
 use serde::{de, Deserialize, Deserializer};
-use sproot::models::{default_alertssource, AlertSource};
 
 #[derive(Debug, Deserialize, Clone)]
 
 pub struct Config {
     // GLOBAL SETTINGS
-    #[serde(default = "default_alertssource")]
-    pub alerts_source: AlertSource,
-    #[serde(default = "default_alert_path")]
-    pub alerts_path: String,
     pub wss_domain: String,
 
     // POSTGRESQL CONNECTION
@@ -48,10 +43,6 @@ impl Config {
 
         config_builder.build()?.try_deserialize()
     }
-}
-
-fn default_alert_path() -> String {
-    String::from("/etc/speculare/alerts-configs")
 }
 
 fn default_smtp_port() -> u16 {

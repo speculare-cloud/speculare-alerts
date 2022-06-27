@@ -4,7 +4,6 @@ use futures::StreamExt;
 use sproot::Pool;
 use std::io::{Error, ErrorKind};
 use tokio::net::TcpStream;
-use tokio_tungstenite::tungstenite::Error::{AlreadyClosed, ConnectionClosed, Io as TIo};
 use tokio_tungstenite::tungstenite::{Error as TError, Message};
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
@@ -51,19 +50,5 @@ impl<'a> WsHandler<'a> {
         }
 
         Ok(())
-    }
-}
-
-pub fn msg_err_handler(err: TError) -> std::io::Result<()> {
-    match err {
-        // Consider those kind of error as fatal
-        ConnectionClosed | AlreadyClosed | TIo(_) => {
-            error!("WebSocket: error is fatal: {}", err);
-            Err(Error::new(ErrorKind::Other, err))
-        }
-        _ => {
-            debug!("WebSocket: error is non-fatal: {}", err);
-            Ok(())
-        }
     }
 }

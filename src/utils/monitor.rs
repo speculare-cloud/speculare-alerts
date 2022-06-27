@@ -1,11 +1,4 @@
-use crate::{utils::alerts::alerts_from_config, ALERTS_CONFIG, CONFIG};
-
-use sproot::{
-    apierrors::ApiError,
-    models::AlertSource,
-    models::{Alerts, AlertsConfig},
-    Pool,
-};
+use sproot::{apierrors::ApiError, models::Alerts, Pool};
 
 use super::alerts::{AlertsQuery, WholeAlert};
 
@@ -17,11 +10,7 @@ pub struct Monitor {
 impl Monitor {
     pub fn default(pool: &Pool) -> Self {
         // Get the Alerts and convert them into WholeAlert
-        let alerts = match if CONFIG.alerts_source == AlertSource::Files {
-            alerts_from_files(pool)
-        } else {
-            alerts_from_database(pool)
-        } {
+        let alerts = match alerts_from_database(pool) {
             Ok(alerts) => alerts
                 .into_iter()
                 .map(|alert| {
@@ -51,21 +40,6 @@ impl Monitor {
             alert.start_monitoring(self.pool.clone());
         }
     }
-}
-
-fn alerts_from_files(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
-    // Get the AlertsConfig from the ALERTS_PATH folder
-    let alerts_config: Vec<AlertsConfig> = AlertsConfig::from_configs_path(&CONFIG.alerts_path)?;
-    // New scope: Drop the lock as soon as it's not needed anymore
-    {
-        // Move the local alerts_config Vec to the global ALERTS_CONFIG
-        let mut x = ALERTS_CONFIG.write().unwrap();
-        let _ = std::mem::replace(&mut *x, alerts_config);
-    }
-    trace!("alerts_from_files: read from the alerts_path");
-
-    // Convert the AlertsConfig to alerts
-    alerts_from_config(&mut pool.get()?)
 }
 
 fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {

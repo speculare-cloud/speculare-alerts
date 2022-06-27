@@ -16,8 +16,6 @@ pub mod config;
 pub mod impls;
 pub mod monitor;
 pub mod query;
-pub mod websocket;
-pub mod ws_utils;
 
 /// Enum used to hold either i32, String or Option<String> (from CDC)
 ///
@@ -35,7 +33,7 @@ enum Thing {
 /// Convert to lowercase to match with the message "update", "insert"
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
-enum CdcKind {
+pub enum CdcKind {
     Update,
     Insert,
     Delete,
@@ -43,10 +41,10 @@ enum CdcKind {
 
 /// Structure holding the info we need from the WebSocket
 #[derive(Serialize, Deserialize, Debug)]
-struct CdcChange {
+pub struct CdcChange {
     columnnames: Vec<String>,
     columnvalues: Vec<Thing>,
-    kind: CdcKind,
+    pub kind: CdcKind,
     table: String,
 }
 
