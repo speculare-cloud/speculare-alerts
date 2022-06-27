@@ -11,6 +11,7 @@ use bastion::{
 };
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use std::time::Duration;
+use tokio::time::interval;
 
 lazy_static::lazy_static! {
     static ref SUPERVISOR: SupervisorRef = match Bastion::supervisor(|sp| {
@@ -85,8 +86,7 @@ impl WholeAlert {
                     let pool = pool.clone();
                     async move {
                         // Construct the interval corresponding to this alert
-                        let mut interval =
-                            tokio::time::interval(Duration::from_secs(alert.inner.timing as u64));
+                        let mut interval = interval(Duration::from_secs(alert.inner.timing as u64));
 
                         trace!(
                             "Alert {} for host_uuid {:.6} running every {:?}",
@@ -107,36 +107,6 @@ impl WholeAlert {
                 })
             })
             .expect("Cannot create the Children for Bastion");
-
-        // let cid = self.inner.id.clone();
-        // let alert = self.clone();
-        // let children_ref = Bastion::spawn(move |_ctx: BastionContext| {
-        //     let alert = alert.clone();
-        //     let pool = pool.clone();
-        //     async move {
-        //         debug!("{:?}", alert);
-
-        //         // Construct the interval corresponding to this alert
-        //         let mut interval =
-        //             tokio::time::interval(Duration::from_secs(alert.inner.timing as u64));
-
-        //         // Start the real "forever" loop
-        //         loop {
-        //             // Wait for the next tick of our interval
-        //             interval.tick().await;
-        //             trace!(
-        //                 "Alert {} for host_uuid {:.6} running every {:?}",
-        //                 alert.inner.name,
-        //                 alert.inner.host_uuid,
-        //                 interval.period()
-        //             );
-
-        //             // Execute the query and the analysis
-        //             execute_analysis(&alert, &mut alert.get_conn(&pool));
-        //         }
-        //     }
-        // })
-        // .expect("Cannot create the Children for Bastion");
 
         RUNNING_CHILDREN.write().unwrap().insert(cid, children_ref);
     }
