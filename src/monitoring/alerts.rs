@@ -76,14 +76,18 @@ impl WholeAlert {
 
     /// Create the task for a particular alert and add it to the RUNNING_ALERT.
     /// TODO - Get rid of most of those clone (beurk)
-    pub fn start_monitoring(&self, pool: Pool) {
+    pub fn start_monitoring(self, pool: Pool) {
+        // Cloning the id of the inner alert to the RUNNING_CHILDREN
         let cid = self.inner.id.clone();
-        let alert = self.clone();
+
+        // Create/Add a new children into the Bastion "supervisor"
+        // This children will be restarted if it fails and can be killed
+        // thanks to the ChildrenRef added inside RUNNING_CHILDREN.
         let children_ref = SUPERVISOR
             .children(|child| {
                 child.with_exec(move |_ctx: BastionContext| {
-                    let alert = alert.clone();
-                    let pool = pool.clone();
+                    let alert = self.clone();
+                    let mut conn = self.get_conn(&pool);
                     async move {
                         // Construct the interval corresponding to this alert
                         let mut interval = interval(Duration::from_secs(alert.inner.timing as u64));
@@ -101,13 +105,14 @@ impl WholeAlert {
                             interval.tick().await;
 
                             // Execute the query and the analysis
-                            execute_analysis(&alert, &mut alert.get_conn(&pool));
+                            execute_analysis(&alert, &mut conn);
                         }
                     }
                 })
             })
             .expect("Cannot create the Children for Bastion");
 
+        // Add the children_ref into the global AHashMap RUNNING_CHILDREN
         RUNNING_CHILDREN.write().unwrap().insert(cid, children_ref);
     }
 }
