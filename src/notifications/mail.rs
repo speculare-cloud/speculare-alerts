@@ -1,5 +1,7 @@
-use crate::utils::{IncidentStatus, Severity};
-use crate::CONFIG;
+use crate::{
+    monitoring::{IncidentStatus, Severity},
+    CONFIG,
+};
 
 use askama::Template;
 use lettre::transport::smtp::authentication::Credentials;

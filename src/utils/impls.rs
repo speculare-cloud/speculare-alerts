@@ -87,11 +87,13 @@ impl From<&CdcChange> for Result<Alerts, Error> {
                     matched += 1;
                 },
                 "info" => unsafe {
-                    addr_of_mut!((*alert_ptr).info).write(
-                        as_variant!(&data.columnvalues[pos], Thing::OptionString)
-                            .expect("info is not a Option<String>")
-                            .to_owned(),
-                    );
+                    let val = match &data.columnvalues[pos] {
+                        Thing::OptionString(_) => None,
+                        Thing::String(val) => Some(val.to_owned()),
+                        _ => None,
+                    };
+
+                    addr_of_mut!((*alert_ptr).info).write(val);
                 },
                 "host_uuid" => unsafe {
                     addr_of_mut!((*alert_ptr).host_uuid).write(
@@ -110,11 +112,13 @@ impl From<&CdcChange> for Result<Alerts, Error> {
                     matched += 1;
                 },
                 "where_clause" => unsafe {
-                    addr_of_mut!((*alert_ptr).where_clause).write(
-                        as_variant!(&data.columnvalues[pos], Thing::OptionString)
-                            .expect("where_clause is not an Option<String>")
-                            .to_owned(),
-                    );
+                    let val = match &data.columnvalues[pos] {
+                        Thing::OptionString(_) => None,
+                        Thing::String(val) => Some(val.to_owned()),
+                        _ => None,
+                    };
+
+                    addr_of_mut!((*alert_ptr).where_clause).write(val);
                 },
                 // In case we don't have a known field
                 _ => {
