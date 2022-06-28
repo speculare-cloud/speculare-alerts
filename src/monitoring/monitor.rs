@@ -1,4 +1,7 @@
-use super::alerts::{alerts_from_database, AlertsQuery, WholeAlert};
+use super::{
+    alerts::{alerts_from_database, WholeAlert},
+    query::AlertsQuery,
+};
 
 use sproot::Pool;
 
@@ -13,15 +16,22 @@ impl Monitor {
         let alerts = match alerts_from_database(pool) {
             Ok(alerts) => alerts
                 .into_iter()
-                .map(|alert| {
-                    let (query, qtype) = alert.get_query();
-
-                    WholeAlert {
+                .map(|alert| match alert.construct_query() {
+                    Ok((query, qtype)) => Ok(WholeAlert {
                         inner: alert,
                         query,
                         qtype,
+                    }),
+                    Err(err) => {
+                        error!(
+                            "cannot construct the query related to alert {}: {}",
+                            alert.id, err
+                        );
+                        Err(err)
                     }
                 })
+                .take_while(Result::is_ok)
+                .map(Result::unwrap)
                 .collect(),
             Err(err) => {
                 error!("monitoring: fatal error: {}", err);

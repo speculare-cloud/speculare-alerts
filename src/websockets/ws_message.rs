@@ -1,5 +1,5 @@
 use crate::{
-    monitoring::alerts::{AlertsQuery, WholeAlert},
+    monitoring::{alerts::WholeAlert, query::AlertsQuery},
     utils::{CdcChange, CdcKind},
 };
 
@@ -33,7 +33,16 @@ pub fn msg_ok_database(msg: Message, pool: &Pool) {
     // Construct alert from CdcChange (using columnname and columnvalues)
     let alert: WholeAlert = match (&data).into() {
         Ok(alert) => {
-            let (query, qtype) = alert.get_query();
+            let (query, qtype) = match alert.construct_query() {
+                Ok((q, t)) => (q, t),
+                Err(err) => {
+                    error!(
+                        "cannot construct the query related to alert {}: {}",
+                        alert.id, err
+                    );
+                    return;
+                }
+            };
 
             WholeAlert {
                 inner: alert,

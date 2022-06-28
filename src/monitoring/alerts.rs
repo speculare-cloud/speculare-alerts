@@ -1,14 +1,15 @@
+use crate::monitoring::{pct, QueryType};
+use crate::utils::{AbsDTORaw, PctDTORaw};
 use crate::RUNNING_CHILDREN;
 
 use super::analysis::execute_analysis;
-use super::query::construct_query;
-use super::QueryType;
 
 use bastion::{
     context::BastionContext,
     supervisor::{ActorRestartStrategy, RestartStrategy, SupervisorRef},
     Bastion,
 };
+use diesel::{sql_types::Text, *};
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use std::time::Duration;
 use tokio::time::interval;
@@ -27,25 +28,6 @@ lazy_static::lazy_static! {
             std::process::exit(1);
         }
     };
-}
-
-pub trait AlertsQuery {
-    fn get_query(&self) -> (String, QueryType);
-}
-
-impl AlertsQuery for Alerts {
-    fn get_query(&self) -> (String, QueryType) {
-        match construct_query(self) {
-            Ok((query, qtype)) => (query, qtype),
-            Err(err) => {
-                error!(
-                    "Alert {} for host_uuid {:.6} cannot build the query: {}",
-                    self.name, self.host_uuid, err
-                );
-                std::process::exit(1);
-            }
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +57,6 @@ impl WholeAlert {
     }
 
     /// Create the task for a particular alert and add it to the RUNNING_ALERT.
-    /// TODO - Get rid of most of those clone (beurk)
     pub fn start_monitoring(self, pool: Pool) {
         // Cloning the id of the inner alert to the RUNNING_CHILDREN
         let cid = self.inner.id.clone();
@@ -114,6 +95,33 @@ impl WholeAlert {
 
         // Add the children_ref into the global AHashMap RUNNING_CHILDREN
         RUNNING_CHILDREN.write().unwrap().insert(cid, children_ref);
+    }
+
+    /// This function execute the query based on the QueryType,
+    /// because all type does not wait for the same result.
+    pub fn execute_query(&self, conn: &mut ConnType) -> Result<String, ApiError> {
+        // Each qtype type has their own return structure and conversion method (from struct to String).
+        match self.qtype {
+            QueryType::Pct => {
+                let results = sql_query(&self.query)
+                    .bind::<Text, _>(&self.inner.host_uuid)
+                    .load::<PctDTORaw>(conn)?;
+                Ok(pct::compute_pct(&results).to_string())
+            }
+            QueryType::Abs => {
+                let results = sql_query(&self.query)
+                    .bind::<Text, _>(&self.inner.host_uuid)
+                    .load::<AbsDTORaw>(conn)?;
+                trace!("result abs is {:?}", &results);
+                if results.is_empty() {
+                    Err(ApiError::NotFoundError(String::from(
+                        "the result of the query (abs) is empty",
+                    )))
+                } else {
+                    Ok(results[0].value.to_string())
+                }
+            }
+        }
     }
 }
 
