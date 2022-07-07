@@ -64,7 +64,6 @@ lazy_static::lazy_static! {
 #[derive(Template)]
 #[template(path = "incident.html")]
 struct IncidentTemplate<'a> {
-    incident_id: i32,
     alert_name: &'a str,
     hostname: &'a str,
     severity: &'a str,
@@ -79,12 +78,13 @@ struct IncidentTemplate<'a> {
 #[derive(Template)]
 #[template(path = "resolved.html")]
 struct ResolvedTemplate<'a> {
-    incident_id: i32,
     alert_name: &'a str,
     hostname: &'a str,
-    severity: &'a str,
-    started_at: &'a str,
     resolved_at: &'a str,
+    lookup: &'a str,
+    result: &'a str,
+    warn: &'a str,
+    crit: &'a str,
 }
 
 fn send_mail(incident: &Incidents, template: String) {
@@ -135,7 +135,6 @@ pub fn send_alert(incident: &Incidents) {
 
     let template = match IncidentStatus::from(incident.status) {
         IncidentStatus::Active => IncidentTemplate {
-            incident_id: incident.id,
             alert_name: &incident.alerts_name,
             hostname: &incident.hostname,
             severity: &incident_severity,
@@ -148,12 +147,13 @@ pub fn send_alert(incident: &Incidents) {
         .render()
         .unwrap(),
         IncidentStatus::Resolved => ResolvedTemplate {
-            incident_id: incident.id,
             alert_name: &incident.alerts_name,
             hostname: &incident.hostname,
-            severity: &incident_severity,
-            started_at: &started_at,
             resolved_at: &updated_at,
+            lookup: &incident.alerts_lookup,
+            result: &incident.result,
+            warn: &incident.alerts_warn,
+            crit: &incident.alerts_crit,
         }
         .render()
         .unwrap(),
@@ -166,10 +166,8 @@ pub fn send_alert(incident: &Incidents) {
 #[derive(Template)]
 #[template(path = "escalate.html")]
 struct EscalateTemplate<'a> {
-    incident_id: i32,
     hostname: &'a str,
     severity: &'a str,
-    started_at: &'a str,
     updated_at: &'a str,
     lookup: &'a str,
     result: &'a str,
@@ -180,14 +178,11 @@ struct EscalateTemplate<'a> {
 pub fn send_escalate(incident: &Incidents) {
     // Convert the severity, started_at & updated_at to string
     let incident_severity = Severity::from(incident.severity).to_string();
-    let started_at = incident.started_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at = incident.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
 
     let escalate_template = EscalateTemplate {
-        incident_id: incident.id,
         hostname: &incident.hostname,
         severity: &incident_severity,
-        started_at: &started_at,
         updated_at: &updated_at,
         lookup: &incident.alerts_lookup,
         result: &incident.result,
