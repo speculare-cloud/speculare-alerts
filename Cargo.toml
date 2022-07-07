@@ -17,11 +17,11 @@ chrono = { version = "0.4", features = ["serde"] }
 config = { version = "0.13", features = ["toml"] }
 diesel = { version = "2.0.0-rc.0", features = ["postgres", "r2d2", "chrono"] }
 env_logger = "0.9"
-evalexpr = "7.0"
+evalexpr = "8.0"
 futures = "0.3"
 futures-util = "0.3"
 lazy_static = "1.4"
-lettre = { version = "0.10.0-rc.7", features = ["rustls-tls"] }
+lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
 regex = "1.5"
 r2d2 = "0.8"
