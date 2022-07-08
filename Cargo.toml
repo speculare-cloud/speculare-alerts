@@ -8,7 +8,6 @@ edition = "2018"
 [dependencies]
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
 ahash = "0.7"
-askama = "0.11"
 bastion = "0.4"
 bastion-executor = { version = "0.4", features = ["tokio-runtime"] }
 clap = { version = "3.1", features = ["derive"] }
@@ -25,8 +24,9 @@ lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
 regex = "1.5"
 r2d2 = "0.8"
+sailfish = "0.4"
 serde = { version = "1.0", features = ["derive"] }
-simd-json = "0.5"
+simd-json = "0.6"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tokio-tungstenite = { version = "0.17", features = ["rustls-tls-native-roots"] }
 

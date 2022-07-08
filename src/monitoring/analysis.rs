@@ -78,10 +78,12 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 resolved_at: Some(Utc::now().naive_local()),
                 ..Default::default()
             };
+            // TODO - Handle error
             let incident = incident_dto
                 .gupdate(conn, incident_id)
                 .expect("Failed to update (resolve) the incidents");
-            mail::send_alert(&incident);
+            // TODO - Handle error
+            mail::send_information_mail(&incident, false);
         }
         return;
     }
@@ -133,7 +135,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             // We should_alert if the prev severity is lower than the current one
             if should_alert {
                 // TODO - Handle error
-                mail::send_escalate(&incident);
+                mail::send_information_mail(&incident, true);
             }
         }
         None => {
@@ -167,7 +169,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 .expect("Failed to insert a new incident");
 
             // TODO - Handle error
-            mail::send_alert(&incident);
+            mail::send_information_mail(&incident, false);
         }
     }
 }
