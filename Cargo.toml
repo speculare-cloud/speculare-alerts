@@ -7,28 +7,27 @@ edition = "2018"
 
 [dependencies]
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
-ahash = "0.7"
 bastion = "0.4"
 bastion-executor = { version = "0.4", features = ["tokio-runtime"] }
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "3.2", features = ["derive"] }
 clap-verbosity-flag = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 config = { version = "0.13", features = ["toml"] }
 diesel = { version = "2.0.0-rc.0", features = ["postgres", "r2d2", "chrono"] }
-env_logger = "0.9"
 evalexpr = "8.0"
 futures = "0.3"
 futures-util = "0.3"
 lazy_static = "1.4"
 lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
-regex = "1.5"
+regex = "1.6"
 r2d2 = "0.8"
 sailfish = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 simd-json = "0.6"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tokio-tungstenite = { version = "0.17", features = ["rustls-tls-native-roots"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [profile.release]
 lto = true

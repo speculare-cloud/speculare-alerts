@@ -5,12 +5,12 @@ use crate::monitoring::monitor::Monitor;
 use crate::notifications::mail;
 use crate::utils::config::Config;
 
-use ahash::AHashMap;
 use bastion::prelude::ChildrenRef;
 use bastion::Bastion;
 use clap::Parser;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 use sproot::{prog, Pool};
+use std::collections::HashMap;
 use std::sync::RwLock;
 use std::{thread, time::Duration};
 use websockets::ws_handler::WsHandler;
@@ -41,7 +41,7 @@ lazy_static::lazy_static! {
         }
     };
 
-    static ref RUNNING_CHILDREN: RwLock<AHashMap<String, ChildrenRef>> = RwLock::new(AHashMap::new());
+    static ref RUNNING_CHILDREN: RwLock<HashMap<String, ChildrenRef>> = RwLock::new(HashMap::new());
 }
 
 fn init_pool() -> Pool {
@@ -68,14 +68,20 @@ fn init_pool() -> Pool {
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
-    // Init logger
-    env_logger::Builder::new()
-        .filter_module(
-            &prog().map_or_else(|| "speculare_alerts".to_owned(), |f| f.replace('-', "_")),
-            args.verbose.log_level_filter(),
+    // Define log level
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var(
+            "RUST_LOG",
+            format!(
+                "{}={level},sproot={level}",
+                &prog().map_or_else(|| "speculare_alerts".to_owned(), |f| f.replace('-', "_")),
+                level = args.verbose.log_level_filter()
+            ),
         )
-        .filter_module("sproot", args.verbose.log_level_filter())
-        .init();
+    }
+
+    // Init logger/tracing
+    tracing_subscriber::fmt::init();
 
     // Initialize the connections'pool (r2d2 sync)
     let pool = init_pool();
