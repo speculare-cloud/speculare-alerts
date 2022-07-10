@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
+base64 = "0.13"
 bastion = "0.4"
 bastion-executor = { version = "0.4", features = ["tokio-runtime"] }
 clap = { version = "3.2", features = ["derive"] }
@@ -17,9 +18,11 @@ diesel = { version = "2.0.0-rc.0", features = ["postgres", "r2d2", "chrono"] }
 evalexpr = "8.0"
 futures = "0.3"
 futures-util = "0.3"
+http = "0.2"
 lazy_static = "1.4"
 lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
+rand = "0.8"
 regex = "1.6"
 r2d2 = "0.8"
 sailfish = "0.4"

@@ -4,6 +4,7 @@ use futures::StreamExt;
 use sproot::Pool;
 use std::io::{Error, ErrorKind};
 use tokio::net::TcpStream;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::{Error as TError, Message};
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
@@ -20,11 +21,16 @@ pub struct WsHandler<'a> {
 impl<'a> WsHandler<'a> {
     async fn open_connection(&self) -> std::io::Result<WsStream> {
         let ws_url = format!(
-            "wss://{}/ws?query={}:{}",
+            "{}/ws?query={}:{}",
             &CONFIG.wss_domain, self.query, self.table
         );
 
-        let ws_stream = connect_async(&ws_url)
+        let mut request = ws_url.into_client_request().unwrap();
+        request
+            .headers_mut()
+            .insert("SP-ADM", CONFIG.cdc_adm.clone().parse().unwrap());
+
+        let ws_stream = connect_async(request)
             .await
             .map_err(|e| Error::new(ErrorKind::Other, e))?
             .0;

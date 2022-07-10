@@ -28,6 +28,8 @@ pub struct Config {
     pub smtp_email_sender: Mailbox,
     #[serde(deserialize_with = "mailbox_deser")]
     pub smtp_email_receiver: Mailbox,
+
+    pub cdc_adm: String,
 }
 
 impl Config {
