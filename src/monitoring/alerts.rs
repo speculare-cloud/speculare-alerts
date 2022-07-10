@@ -114,9 +114,9 @@ impl WholeAlert {
                     .load::<AbsDTORaw>(conn)?;
                 trace!("result abs is {:?}", &results);
                 if results.is_empty() {
-                    Err(ApiError::NotFoundError(String::from(
+                    Err(ApiError::NotFoundError(Some(String::from(
                         "the result of the query (abs) is empty",
-                    )))
+                    ))))
                 } else {
                     Ok(results[0].value.to_string())
                 }
