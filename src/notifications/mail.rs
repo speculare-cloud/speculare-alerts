@@ -11,25 +11,22 @@ use lettre::{
     message::{header, MultiPart, SinglePart},
     Message, Transport,
 };
+use once_cell::sync::Lazy;
 use sailfish::TemplateOnce;
 use sproot::models::Incidents;
 
 const DATE_SMALL_FORMAT: &str = "%d %b %Y at %H:%M";
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-lazy_static::lazy_static! {
-    // Lazy static for SmtpTransport used to send mails
-    // Build it using rustls and a pool of 16 items.
-    static ref MAILER: SmtpTransport = {
-        match get_smtp_transport() {
-            Ok(smtp) => smtp,
-            Err(e) => {
-                error!("MAILER: cannot get the smtp_transport: {}", e);
-                std::process::exit(1);
-            }
-        }
-    };
-}
+// Lazy static for SmtpTransport used to send mails
+// Build it using rustls and a pool of 16 items.
+static MAILER: Lazy<SmtpTransport> = Lazy::new(|| match get_smtp_transport() {
+    Ok(smtp) => smtp,
+    Err(e) => {
+        error!("MAILER: cannot get the smtp_transport: {}", e);
+        std::process::exit(1);
+    }
+});
 
 pub fn test_smtp_transport() {
     // Check if the SMTP server host is "ok"

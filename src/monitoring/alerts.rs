@@ -1,34 +1,14 @@
 use crate::monitoring::{pct, QueryType};
 use crate::utils::{AbsDTORaw, PctDTORaw};
-use crate::RUNNING_CHILDREN;
+use crate::{RUNNING_CHILDREN, SUPERVISOR};
 
 use super::analysis::execute_analysis;
 
-use bastion::{
-    context::BastionContext,
-    supervisor::{ActorRestartStrategy, RestartStrategy, SupervisorRef},
-    Bastion,
-};
+use bastion::context::BastionContext;
 use diesel::{sql_types::Text, *};
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use std::time::Duration;
 use tokio::time::interval;
-
-lazy_static::lazy_static! {
-    static ref SUPERVISOR: SupervisorRef = match Bastion::supervisor(|sp| {
-        sp.with_restart_strategy(RestartStrategy::default().with_actor_restart_strategy(
-            ActorRestartStrategy::LinearBackOff {
-                timeout: Duration::from_secs(3),
-            },
-        ))
-    }) {
-        Ok(sp) => sp,
-        Err(err) => {
-            error!("Cannot create the Bastion supervisor: {:?}", err);
-            std::process::exit(1);
-        }
-    };
-}
 
 #[derive(Debug, Clone)]
 pub struct WholeAlert {

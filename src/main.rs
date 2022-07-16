@@ -6,9 +6,11 @@ use crate::notifications::mail;
 use crate::utils::config::Config;
 
 use bastion::prelude::ChildrenRef;
+use bastion::supervisor::{ActorRestartStrategy, RestartStrategy, SupervisorRef};
 use bastion::Bastion;
 use clap::Parser;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
+use once_cell::sync::Lazy;
 use sproot::{prog, Pool};
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -31,18 +33,33 @@ struct Args {
     verbose: clap_verbosity_flag::Verbosity,
 }
 
-lazy_static::lazy_static! {
-    // Lazy static of the Config which is loaded from the config file
-    static ref CONFIG: Config = match Config::new() {
-        Ok(config) => config,
-        Err(e) => {
-            error!("Cannot build the Config: {}", e);
+// Lazy static of the Config which is loaded from the config file
+static CONFIG: Lazy<Config> = Lazy::new(|| match Config::new() {
+    Ok(config) => config,
+    Err(e) => {
+        error!("Cannot build the Config: {}", e);
+        std::process::exit(1);
+    }
+});
+
+static RUNNING_CHILDREN: Lazy<RwLock<HashMap<String, ChildrenRef>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+static SUPERVISOR: Lazy<SupervisorRef> = Lazy::new(|| {
+    match Bastion::supervisor(|sp| {
+        sp.with_restart_strategy(RestartStrategy::default().with_actor_restart_strategy(
+            ActorRestartStrategy::LinearBackOff {
+                timeout: Duration::from_secs(3),
+            },
+        ))
+    }) {
+        Ok(sp) => sp,
+        Err(err) => {
+            error!("Cannot create the Bastion supervisor: {:?}", err);
             std::process::exit(1);
         }
-    };
-
-    static ref RUNNING_CHILDREN: RwLock<HashMap<String, ChildrenRef>> = RwLock::new(HashMap::new());
-}
+    }
+});
 
 fn init_pool() -> Pool {
     // Init the connection to the postgresql

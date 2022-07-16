@@ -1,20 +1,19 @@
 use crate::monitoring::QueryType;
 use crate::utils::DISALLOWED_STATEMENT;
 
+use once_cell::sync::Lazy;
 use regex::Regex;
 use sproot::{apierrors::ApiError, models::Alerts};
 
-lazy_static::lazy_static! {
-    static ref INTERVAL_RGX: Regex = {
-        match Regex::new(r"(\d+)([a-zA-Z' '])|([m,h,d,minutes,hours,days,minute,hour,day])") {
-            Ok(reg) => reg,
-            Err(e) => {
-                error!("Cannot build the Regex to validate INTERVAL: {}", e);
-                std::process::exit(1);
-            }
+static INTERVAL_RGX: Lazy<Regex> = Lazy::new(|| {
+    match Regex::new(r"(\d+)([a-zA-Z' '])|([m,h,d,minutes,hours,days,minute,hour,day])") {
+        Ok(reg) => reg,
+        Err(e) => {
+            error!("Cannot build the Regex to validate INTERVAL: {}", e);
+            std::process::exit(1);
         }
-    };
-}
+    }
+});
 
 pub trait AlertsQuery {
     fn construct_query(&self) -> Result<(String, QueryType), ApiError>;
