@@ -2,7 +2,7 @@ use chrono::prelude::Utc;
 use evalexpr::*;
 use sproot::{
     apierrors::ApiError,
-    models::{DtoBase, Incidents, IncidentsDTO, IncidentsDTOUpdate},
+    models::{Alerts, BaseCrud, DtoBase, Incidents, IncidentsDTO, IncidentsDTOUpdate},
     ConnType,
 };
 
@@ -82,8 +82,10 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 },
             )
             .expect("Failed to update (resolve) the incidents");
+            let alert =
+                Alerts::get_specific(conn, &incident.alerts_id).expect("Failed to get the alert");
             // TODO - Handle error
-            mail::send_information_mail(&incident, false);
+            mail::send_information_mail(&alert, &incident, false);
         }
         return;
     }
@@ -134,8 +136,10 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             .expect("Failed to update the incidents");
             // We should_alert if the prev severity is lower than the current one
             if should_alert {
+                let alert = Alerts::get_specific(conn, &incident.alerts_id)
+                    .expect("Failed to get the alert");
                 // TODO - Handle error
-                mail::send_information_mail(&incident, true);
+                mail::send_information_mail(&alert, &incident, true);
             }
         }
         None => {
@@ -157,18 +161,13 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                     status: IncidentStatus::Active as i32,
                     severity: severity as i32,
                     alerts_id: calert.id,
-                    alerts_name: calert.name,
-                    alerts_table: calert.table,
-                    alerts_lookup: calert.lookup,
-                    alerts_warn: calert.warn,
-                    alerts_crit: calert.crit,
-                    alerts_info: calert.info,
-                    alerts_where_clause: calert.where_clause,
                 },
             )
             .expect("Failed to insert a new incident");
+            let alert =
+                Alerts::get_specific(conn, &incident.alerts_id).expect("Failed to get the alert");
             // TODO - Handle error
-            mail::send_information_mail(&incident, false);
+            mail::send_information_mail(&alert, &incident, false);
         }
     }
 }

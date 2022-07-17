@@ -8,7 +8,7 @@ use lettre::{
 };
 use once_cell::sync::Lazy;
 use sailfish::TemplateOnce;
-use sproot::models::Incidents;
+use sproot::models::{Alerts, Incidents};
 
 use crate::{
     monitoring::{IncidentStatus, Severity},
@@ -82,49 +82,49 @@ struct ResolvedTemplate<'a> {
 }
 
 /// Send an email alerting on the status (new/escalated/resolved) of an incident.
-pub fn send_information_mail(incident: &Incidents, escalate: bool) {
+pub fn send_information_mail(alert: &Alerts, incident: &Incidents, escalate: bool) {
     // SAFETY: render_once() can never fails except if called from the template itself.
     let mail_content = match (escalate, IncidentStatus::from(incident.status)) {
         (true, _) => EscalateTemplate {
             hostname: &incident.hostname,
             severity: &Severity::from(incident.severity).to_string(),
             updated_at: &incident.updated_at.format(DATE_FORMAT).to_string(),
-            lookup: &incident.alerts_lookup,
+            lookup: &alert.lookup,
             result: &incident.result,
-            warn: &incident.alerts_warn,
-            crit: &incident.alerts_crit,
+            warn: &alert.warn,
+            crit: &alert.crit,
         }
         .render_once()
         .unwrap(),
         (false, IncidentStatus::Active) => IncidentTemplate {
-            alert_name: &incident.alerts_name,
+            alert_name: &alert.name,
             hostname: &incident.hostname,
             severity: &Severity::from(incident.severity).to_string(),
             started_at: &incident.started_at.format(DATE_FORMAT).to_string(),
-            lookup: &incident.alerts_lookup,
+            lookup: &alert.lookup,
             result: &incident.result,
-            warn: &incident.alerts_warn,
-            crit: &incident.alerts_crit,
+            warn: &alert.warn,
+            crit: &alert.crit,
         }
         .render_once()
         .unwrap(),
         (false, IncidentStatus::Resolved) => ResolvedTemplate {
-            alert_name: &incident.alerts_name,
+            alert_name: &alert.name,
             hostname: &incident.hostname,
             resolved_at: &incident.updated_at.format(DATE_FORMAT).to_string(),
-            lookup: &incident.alerts_lookup,
+            lookup: &alert.lookup,
             result: &incident.result,
-            warn: &incident.alerts_warn,
-            crit: &incident.alerts_crit,
+            warn: &alert.warn,
+            crit: &alert.crit,
         }
         .render_once()
         .unwrap(),
     };
 
-    send_mail(incident, mail_content);
+    send_mail(alert, incident, mail_content);
 }
 
-fn send_mail(incident: &Incidents, template: String) {
+fn send_mail(alert: &Alerts, incident: &Incidents, template: String) {
     // Build the email with all params
     let email = match Message::builder()
         // Sender is the email of the sender, which is used by the SMTP
@@ -133,7 +133,7 @@ fn send_mail(incident: &Incidents, template: String) {
         // Receiver is the person who should get the email
         .to(CONFIG.smtp_email_receiver.clone())
         // Subject will looks like: "Hostname [alert_name] - 23 Jul 2021 at 17:51"
-        .subject(format!("{} [{}] - {}", incident.hostname, incident.alerts_name, incident.started_at.format(DATE_SMALL_FORMAT)))
+        .subject(format!("{} [{}] - {}", incident.hostname, alert.name, incident.started_at.format(DATE_SMALL_FORMAT)))
         .multipart(
                 // Use multipart to have a fallback
             MultiPart::alternative()
@@ -161,7 +161,7 @@ fn send_mail(incident: &Incidents, template: String) {
     match MAILER.send(&email) {
         Ok(_) => info!(
             "Email for alert {} with host {:.6} sent successfully!",
-            incident.alerts_name, incident.host_uuid
+            alert.name, incident.host_uuid
         ),
         Err(err) => error!("Could not send email: {}", err),
     }
