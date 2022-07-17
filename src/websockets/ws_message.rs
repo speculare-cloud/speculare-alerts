@@ -1,12 +1,13 @@
+use std::io::{Error, ErrorKind};
+
+use sproot::Pool;
+use tokio_tungstenite::tungstenite::Error::{AlreadyClosed, ConnectionClosed, Io as TIo};
+use tokio_tungstenite::tungstenite::{Error as TError, Message};
+
 use crate::{
     monitoring::{alerts::WholeAlert, query::AlertsQuery},
     utils::{CdcChange, CdcKind},
 };
-
-use sproot::Pool;
-use std::io::{Error, ErrorKind};
-use tokio_tungstenite::tungstenite::Error::{AlreadyClosed, ConnectionClosed, Io as TIo};
-use tokio_tungstenite::tungstenite::{Error as TError, Message};
 
 pub fn msg_err_handler(err: TError) -> std::io::Result<()> {
     match err {

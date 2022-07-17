@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate log;
 
-use crate::monitoring::monitor::Monitor;
-use crate::notifications::mail;
-use crate::utils::config::Config;
+use std::collections::HashMap;
+use std::sync::RwLock;
+use std::{thread, time::Duration};
 
 use bastion::prelude::ChildrenRef;
 use bastion::supervisor::{ActorRestartStrategy, RestartStrategy, SupervisorRef};
@@ -12,11 +12,12 @@ use clap::Parser;
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 use once_cell::sync::Lazy;
 use sproot::{prog, Pool};
-use std::collections::HashMap;
-use std::sync::RwLock;
-use std::{thread, time::Duration};
 use websockets::ws_handler::WsHandler;
 use websockets::ws_message::{msg_err_handler, msg_ok_database};
+
+use crate::monitoring::monitor::Monitor;
+use crate::notifications::mail;
+use crate::utils::config::Config;
 
 mod monitoring;
 mod notifications;

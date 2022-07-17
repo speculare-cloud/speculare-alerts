@@ -1,14 +1,13 @@
-use crate::notifications::mail;
-
-use super::{alerts::WholeAlert, IncidentStatus, Severity};
-
 use chrono::prelude::Utc;
 use evalexpr::*;
 use sproot::{
     apierrors::ApiError,
-    models::{Alerts, Incidents, IncidentsDTO, IncidentsDTOUpdate},
+    models::{DtoBase, Incidents, IncidentsDTO, IncidentsDTOUpdate},
     ConnType,
 };
+
+use super::{alerts::WholeAlert, IncidentStatus, Severity};
+use crate::notifications::mail;
 
 /// Determine if we are in a Warn or Crit level of incidents
 fn check_threshold(walert: &WholeAlert, result: &str) -> (bool, bool) {
@@ -71,17 +70,18 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 ">[{}] We need to resolve the previous incident however",
                 walert.inner.id
             );
-            let incident_id = prev_incident.id;
-            let incident_dto = IncidentsDTOUpdate {
-                status: Some(IncidentStatus::Resolved as i32),
-                updated_at: Some(Utc::now().naive_local()),
-                resolved_at: Some(Utc::now().naive_local()),
-                ..Default::default()
-            };
             // TODO - Handle error
-            let incident = incident_dto
-                .gupdate(conn, incident_id)
-                .expect("Failed to update (resolve) the incidents");
+            let incident = Incidents::update_and_get(
+                conn,
+                prev_incident.id,
+                &IncidentsDTOUpdate {
+                    status: Some(IncidentStatus::Resolved as i32),
+                    updated_at: Some(Utc::now().naive_local()),
+                    resolved_at: Some(Utc::now().naive_local()),
+                    ..Default::default()
+                },
+            )
+            .expect("Failed to update (resolve) the incidents");
             // TODO - Handle error
             mail::send_information_mail(&incident, false);
         }
@@ -110,7 +110,6 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 ">[{}] Update the previous incident using the new values",
                 walert.inner.id
             );
-            let incident_id = prev_incident.id;
             // We won't downgrade an incident because it's been a "critical" incident in the past.
             let curr_severity = severity as i32;
             // Check if we should update the severity and thus sending an escalation alert
@@ -121,17 +120,18 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 incident_severity = Some(curr_severity);
             };
             // Update the previous incident
-            let incident_dto = IncidentsDTOUpdate {
-                result: Some(result),
-                updated_at: Some(Utc::now().naive_local()),
-                severity: incident_severity,
-                ..Default::default()
-            };
             // TODO - Handle error
-            let incident = incident_dto
-                .gupdate(conn, incident_id)
-                .expect("Failed to update the incidents");
-
+            let incident = Incidents::update_and_get(
+                conn,
+                prev_incident.id,
+                &IncidentsDTOUpdate {
+                    result: Some(result),
+                    updated_at: Some(Utc::now().naive_local()),
+                    severity: incident_severity,
+                    ..Default::default()
+                },
+            )
+            .expect("Failed to update the incidents");
             // We should_alert if the prev severity is lower than the current one
             if should_alert {
                 // TODO - Handle error
@@ -143,31 +143,30 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                 ">[{}] Create a new incident based on the current values",
                 walert.inner.id
             );
-            // Clone the alert to allow us to own it in the IncidentsDTO
-            let calert: Alerts = walert.inner.clone();
-            let incident = IncidentsDTO {
-                result,
-                started_at: Utc::now().naive_local(),
-                updated_at: Utc::now().naive_local(),
-                resolved_at: None,
-                host_uuid: calert.host_uuid,
-                hostname: calert.hostname,
-                status: IncidentStatus::Active as i32,
-                severity: severity as i32,
-                alerts_id: calert.id,
-                alerts_name: calert.name,
-                alerts_table: calert.table,
-                alerts_lookup: calert.lookup,
-                alerts_warn: calert.warn,
-                alerts_crit: calert.crit,
-                alerts_info: calert.info,
-                alerts_where_clause: calert.where_clause,
-            };
+            let calert = walert.inner.clone();
             // TODO - Handle error
-            let incident = incident
-                .ginsert(conn)
-                .expect("Failed to insert a new incident");
-
+            let incident = Incidents::insert_and_get(
+                conn,
+                &IncidentsDTO {
+                    result,
+                    started_at: Utc::now().naive_local(),
+                    updated_at: Utc::now().naive_local(),
+                    resolved_at: None,
+                    host_uuid: calert.host_uuid,
+                    hostname: calert.hostname,
+                    status: IncidentStatus::Active as i32,
+                    severity: severity as i32,
+                    alerts_id: calert.id,
+                    alerts_name: calert.name,
+                    alerts_table: calert.table,
+                    alerts_lookup: calert.lookup,
+                    alerts_warn: calert.warn,
+                    alerts_crit: calert.crit,
+                    alerts_info: calert.info,
+                    alerts_where_clause: calert.where_clause,
+                },
+            )
+            .expect("Failed to insert a new incident");
             // TODO - Handle error
             mail::send_information_mail(&incident, false);
         }

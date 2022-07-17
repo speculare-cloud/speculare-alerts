@@ -1,12 +1,13 @@
-use crate::CONFIG;
+use std::io::{Error, ErrorKind};
 
 use futures::StreamExt;
 use sproot::Pool;
-use std::io::{Error, ErrorKind};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::{Error as TError, Message};
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+
+use crate::CONFIG;
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 

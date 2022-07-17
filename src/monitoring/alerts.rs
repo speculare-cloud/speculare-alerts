@@ -1,14 +1,14 @@
-use crate::monitoring::{pct, QueryType};
-use crate::utils::{AbsDTORaw, PctDTORaw};
-use crate::{RUNNING_CHILDREN, SUPERVISOR};
-
-use super::analysis::execute_analysis;
+use std::time::Duration;
 
 use bastion::context::BastionContext;
 use diesel::{sql_types::Text, *};
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
-use std::time::Duration;
 use tokio::time::interval;
+
+use super::analysis::execute_analysis;
+use crate::monitoring::{pct, QueryType};
+use crate::utils::{AbsDTORaw, PctDTORaw};
+use crate::{RUNNING_CHILDREN, SUPERVISOR};
 
 #[derive(Debug, Clone)]
 pub struct WholeAlert {
@@ -107,5 +107,5 @@ impl WholeAlert {
 
 pub fn alerts_from_database(pool: &Pool) -> Result<Vec<Alerts>, ApiError> {
     // Get the alerts from the database
-    Alerts::get_list(&mut pool.get()?)
+    Alerts::get_all(&mut pool.get()?)
 }

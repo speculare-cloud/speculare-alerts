@@ -1,9 +1,9 @@
-use crate::Args;
-
 use clap::Parser;
 use config::ConfigError;
 use lettre::message::Mailbox;
 use serde::{de, Deserialize, Deserializer};
+
+use crate::Args;
 
 #[derive(Debug, Deserialize, Clone)]
 

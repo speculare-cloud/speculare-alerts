@@ -1,8 +1,3 @@
-use crate::{
-    monitoring::{IncidentStatus, Severity},
-    CONFIG,
-};
-
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::transport::smtp::PoolConfig;
@@ -14,6 +9,11 @@ use lettre::{
 use once_cell::sync::Lazy;
 use sailfish::TemplateOnce;
 use sproot::models::Incidents;
+
+use crate::{
+    monitoring::{IncidentStatus, Severity},
+    CONFIG,
+};
 
 const DATE_SMALL_FORMAT: &str = "%d %b %Y at %H:%M";
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";

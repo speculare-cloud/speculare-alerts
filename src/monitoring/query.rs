@@ -1,9 +1,9 @@
-use crate::monitoring::QueryType;
-use crate::utils::DISALLOWED_STATEMENT;
-
 use once_cell::sync::Lazy;
 use regex::Regex;
 use sproot::{apierrors::ApiError, models::Alerts};
+
+use crate::monitoring::QueryType;
+use crate::utils::DISALLOWED_STATEMENT;
 
 static INTERVAL_RGX: Lazy<Regex> = Lazy::new(|| {
     match Regex::new(r"(\d+)([a-zA-Z' '])|([m,h,d,minutes,hours,days,minute,hour,day])") {

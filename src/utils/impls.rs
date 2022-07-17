@@ -1,10 +1,11 @@
-use super::{CdcChange, Thing};
-
-use sproot::{as_variant, models::Alerts};
 use std::{
     io::{Error, ErrorKind},
     ptr::addr_of_mut,
 };
+
+use sproot::{as_variant, models::Alerts};
+
+use super::{CdcChange, Thing};
 
 impl From<&CdcChange> for Result<Alerts, Error> {
     fn from(data: &CdcChange) -> Result<Alerts, Error> {
