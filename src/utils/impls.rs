@@ -33,9 +33,9 @@ impl From<&CdcChange> for Result<Alerts, Error> {
                         // in this case it's a i32 so we need to dereference it
                         // If it's a String or a OptionString we don't need to dereference it,
                         // just need to "clone" it (own it).
-                        as_variant!(&data.columnvalues[pos], Thing::String)
-                            .expect("ID is not a String")
-                            .to_owned(),
+                        as_variant!(&data.columnvalues[pos], Thing::Number)
+                            .expect("ID is not a Number")
+                            .to_owned() as i64,
                     );
                     // Increment 1 for the matched count
                     matched += 1;

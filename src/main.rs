@@ -43,7 +43,7 @@ static CONFIG: Lazy<Config> = Lazy::new(|| match Config::new() {
     }
 });
 
-static RUNNING_CHILDREN: Lazy<RwLock<HashMap<String, ChildrenRef>>> =
+static RUNNING_CHILDREN: Lazy<RwLock<HashMap<i64, ChildrenRef>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 static SUPERVISOR: Lazy<SupervisorRef> = Lazy::new(|| {

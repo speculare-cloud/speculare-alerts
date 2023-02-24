@@ -57,7 +57,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
     let (should_warn, should_crit) = check_threshold(walert, &result);
 
     // Check if an active incident already exist for this alarm (err == not found).
-    let prev_incident: Option<Incidents> = match Incidents::find_active(conn, &walert.inner.id) {
+    let prev_incident: Option<Incidents> = match Incidents::find_active(conn, walert.inner.id) {
         Ok(res) => Some(res),
         Err(_) => None,
     };
@@ -83,7 +83,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             )
             .expect("Failed to update (resolve) the incidents");
             let alert =
-                Alerts::get_specific(conn, &incident.alerts_id).expect("Failed to get the alert");
+                Alerts::get_specific(conn, incident.alerts_id).expect("Failed to get the alert");
             // TODO - Handle error
             mail::send_information_mail(&alert, &incident, false);
         }
@@ -136,7 +136,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             .expect("Failed to update the incidents");
             // We should_alert if the prev severity is lower than the current one
             if should_alert {
-                let alert = Alerts::get_specific(conn, &incident.alerts_id)
+                let alert = Alerts::get_specific(conn, incident.alerts_id)
                     .expect("Failed to get the alert");
                 // TODO - Handle error
                 mail::send_information_mail(&alert, &incident, true);
@@ -165,7 +165,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
             )
             .expect("Failed to insert a new incident");
             let alert =
-                Alerts::get_specific(conn, &incident.alerts_id).expect("Failed to get the alert");
+                Alerts::get_specific(conn, incident.alerts_id).expect("Failed to get the alert");
             // TODO - Handle error
             mail::send_information_mail(&alert, &incident, false);
         }
