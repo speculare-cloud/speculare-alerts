@@ -161,6 +161,7 @@ pub fn execute_analysis(walert: &WholeAlert, conn: &mut ConnType) {
                     status: IncidentStatus::Active as i32,
                     severity: severity as i32,
                     alerts_id: calert.id,
+                    cid: calert.cid,
                 },
             )
             .expect("Failed to insert a new incident");
