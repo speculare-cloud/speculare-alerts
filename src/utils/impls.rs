@@ -44,7 +44,7 @@ impl From<&CdcChange> for Result<Alerts, Error> {
                     addr_of_mut!((*alert_ptr).active).write(
                         as_variant!(&data.columnvalues[pos], Thing::Boolean)
                             .expect("Active is not a Number")
-                            .to_owned() as bool,
+                            .to_owned(),
                     );
                     matched += 1;
                 },

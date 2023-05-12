@@ -47,6 +47,9 @@ impl Monitor {
 
     pub fn oneshot(self) {
         for alert in self.alerts {
+            if !alert.inner.active {
+                continue;
+            }
             alert.start_monitoring(self.pool.clone());
         }
     }
