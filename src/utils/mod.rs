@@ -13,6 +13,7 @@ pub mod impls;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 enum Thing {
+    Boolean(bool),
     Number(i32),
     String(String),
     OptionString(Option<String>),

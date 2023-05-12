@@ -40,6 +40,14 @@ impl From<&CdcChange> for Result<Alerts, Error> {
                     // Increment 1 for the matched count
                     matched += 1;
                 },
+                "active" => unsafe {
+                    addr_of_mut!((*alert_ptr).active).write(
+                        as_variant!(&data.columnvalues[pos], Thing::Boolean)
+                            .expect("Active is not a Number")
+                            .to_owned() as bool,
+                    );
+                    matched += 1;
+                },
                 "_name" => unsafe {
                     addr_of_mut!((*alert_ptr).name).write(
                         as_variant!(&data.columnvalues[pos], Thing::String)
@@ -131,7 +139,7 @@ impl From<&CdcChange> for Result<Alerts, Error> {
             }
         }
         // Sanitizer to assure we got all our fields
-        if matched != 9 {
+        if matched != 10 {
             error!("Not all fields were found. Count : {}", matched);
             return Err(Error::new(ErrorKind::Other, "Not all fields were found."));
         }
