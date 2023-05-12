@@ -75,8 +75,8 @@ pub fn msg_ok_database(msg: Message, pool: &Pool) {
             info!("Websocket: running CdcKind::Update or CdcKind::Delete");
             alert.stop_monitoring();
 
-            // If it's an Update, start the task again
-            if data.kind == CdcKind::Update {
+            // If it's an Update (and the alert is still active), start the task again
+            if data.kind == CdcKind::Update && alert.inner.active {
                 alert.start_monitoring(pool.clone());
             }
         }

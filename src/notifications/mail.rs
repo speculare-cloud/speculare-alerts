@@ -172,7 +172,7 @@ fn get_smtp_transport() -> Result<SmtpTransport, lettre::transport::smtp::Error>
 
     let transport = if CONFIG.smtp_tls {
         SmtpTransport::builder_dangerous(&CONFIG.smtp_host).tls(Tls::Required(TlsParameters::new(
-            (&CONFIG.smtp_host).to_owned(),
+            CONFIG.smtp_host.to_owned(),
         )?))
     } else {
         SmtpTransport::builder_dangerous(&CONFIG.smtp_host)

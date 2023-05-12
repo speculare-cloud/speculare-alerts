@@ -39,7 +39,7 @@ impl WholeAlert {
     /// Create the task for a particular alert and add it to the RUNNING_ALERT.
     pub fn start_monitoring(self, pool: Pool) {
         // Cloning the id of the inner alert to the RUNNING_CHILDREN
-        let cid = self.inner.id.clone();
+        let cid = self.inner.id;
 
         // Create/Add a new children into the Bastion "supervisor"
         // This children will be restarted if it fails and can be killed
