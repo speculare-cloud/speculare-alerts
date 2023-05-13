@@ -1,11 +1,12 @@
 use std::io::{Error, ErrorKind};
 
+use sproot::models::AlertsQuery;
 use sproot::Pool;
 use tokio_tungstenite::tungstenite::Error::{AlreadyClosed, ConnectionClosed, Io as TIo};
 use tokio_tungstenite::tungstenite::{Error as TError, Message};
 
 use crate::{
-    monitoring::{alerts::WholeAlert, query::AlertsQuery},
+    monitoring::alerts::WholeAlert,
     utils::{CdcChange, CdcKind},
 };
 

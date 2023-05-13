@@ -1,9 +1,6 @@
-use sproot::Pool;
+use sproot::{models::AlertsQuery, Pool};
 
-use super::{
-    alerts::{alerts_from_database, WholeAlert},
-    query::AlertsQuery,
-};
+use super::alerts::{alerts_from_database, WholeAlert};
 
 pub struct Monitor {
     alerts: Vec<WholeAlert>,

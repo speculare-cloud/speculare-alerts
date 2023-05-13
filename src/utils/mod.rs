@@ -58,20 +58,3 @@ pub struct AbsDTORaw {
     #[diesel(sql_type = Timestamp)]
     pub time: chrono::NaiveDateTime,
 }
-
-/// Constant list of disallowed statement in the SQL query to avoid somthg bad
-pub const DISALLOWED_STATEMENT: &[&str] = &[
-    "DELETE",
-    "UPDATE",
-    "INSERT",
-    //"CREATE", => conflict with created_at, TODO FIX LATER
-    "ALTER",
-    "DROP",
-    "TRUNCATE",
-    "GRANT",
-    "REVOKE",
-    "BEGIN",
-    "COMMIT",
-    "SAVEPOINT",
-    "ROLLBACK",
-];
