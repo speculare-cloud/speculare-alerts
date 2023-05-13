@@ -1,7 +1,6 @@
 pub mod alerts;
 pub mod analysis;
 pub mod monitor;
-pub mod qtype;
 
 /// Enum representing the current Status of the Incidents
 pub enum IncidentStatus {

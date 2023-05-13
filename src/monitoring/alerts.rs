@@ -2,13 +2,12 @@ use std::time::Duration;
 
 use bastion::context::BastionContext;
 use diesel::{sql_types::Text, *};
-use sproot::models::QueryType;
+use sproot::models::qtype::pct;
+use sproot::models::{QueryType, AbsDTORaw, PctDTORaw};
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use tokio::time::interval;
 
 use super::analysis::execute_analysis;
-use super::qtype::pct;
-use crate::utils::{AbsDTORaw, PctDTORaw};
 use crate::{RUNNING_CHILDREN, SUPERVISOR};
 
 #[derive(Debug, Clone)]
