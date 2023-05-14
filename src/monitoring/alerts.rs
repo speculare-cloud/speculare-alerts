@@ -3,7 +3,7 @@ use std::time::Duration;
 use bastion::context::BastionContext;
 use diesel::{sql_types::Text, *};
 use sproot::models::qtype::pct;
-use sproot::models::{QueryType, AbsDTORaw, PctDTORaw};
+use sproot::models::{AbsDTORaw, PctDTORaw, QueryType};
 use sproot::{apierrors::ApiError, models::Alerts, ConnType, Pool};
 use tokio::time::interval;
 
