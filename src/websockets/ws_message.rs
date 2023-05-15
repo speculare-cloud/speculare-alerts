@@ -30,7 +30,7 @@ pub fn msg_ok_database(msg: Message, pool: &Pool) {
     trace!("Websocket: Message received: \"{}\"", msg);
 
     // Construct data from str using Serde
-    let data: CdcChange = match simd_json::from_str(&mut msg) {
+    let data: CdcChange = match unsafe { simd_json::from_str(&mut msg) } {
         Ok(val) => val,
         Err(err) => {
             error!("Failed to parse CdcChange: {} from: {}", err, msg);
